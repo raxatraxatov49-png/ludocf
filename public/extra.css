@@ -24,27 +24,27 @@
 .seg button.on{background:#f3f3f3;color:#111}
 
 /* ---- VIP ---- */
-.vipcard{position:relative;text-align:center;padding:22px 18px 18px;border-radius:28px;border:1px solid rgba(244,197,66,.5);background:radial-gradient(120% 90% at 50% 0%,#4a3a10,#1c1708 70%);box-shadow:0 12px 34px rgba(0,0,0,.6)}
+.vipcard{position:relative;text-align:center;padding:12px 14px 10px;border-radius:20px;border:1px solid rgba(244,197,66,.5);background:radial-gradient(120% 90% at 50% 0%,#4a3a10,#1c1708 70%);box-shadow:0 12px 34px rgba(0,0,0,.6)}
 .vcrown{font-size:54px;line-height:1;filter:drop-shadow(0 0 14px rgba(244,197,66,.7))}
 .vipcard h2{margin:8px 0 4px;font-size:28px;font-weight:900;color:var(--gold2)}
 .vipcard p{margin:0 0 14px;color:#d8cfae;font-size:15px;line-height:1.4}
-.bar7{display:flex;gap:6px;margin:0 6px 8px}
-.bar7 i{flex:1;height:12px;border-radius:7px;background:rgba(255,255,255,.12)}
+.bar7{display:flex;gap:5px;margin:0 6px 6px}
+.bar7 i{flex:1;height:9px;border-radius:7px;background:rgba(255,255,255,.12)}
 .bar7 i.on{background:linear-gradient(90deg,#ffe58a,#e8b04e);box-shadow:0 0 8px rgba(244,197,66,.6)}
-.vcount{font-weight:900;font-size:17px;margin-bottom:14px}
-.vipcard .pill{margin-bottom:8px}
-.vhow{display:block;color:#b9ae85;font-size:12.5px;line-height:1.35}
+.vcount{font-weight:900;font-size:15px;margin-bottom:8px}
+.vipcard .pill{padding:11px;font-size:14px;margin-bottom:6px}
+.vhow{display:block;color:#b9ae85;font-size:11px;line-height:1.25}
 .vipcard.on .bar7,.vipcard.on .pill,.vipcard.on .vhow{display:none}
 .vipcard h2{display:none}
 .vipcard.on h2{display:block}
 .vgold{color:var(--gold2)}
-.vsub{margin:6px 2px 14px;color:var(--gold2);font-size:16px;font-weight:700;line-height:1.35}
-.perks{margin-bottom:14px}
-.perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.perks li{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-radius:18px;background:#1b1b1b;border:1px solid rgba(255,255,255,.06);font-size:15px;line-height:1.35}
-.perks li i{font-style:normal;font-size:24px;flex:none;line-height:1.1}
-.perks li b{display:block;font-size:16px;margin-bottom:2px;color:var(--gold2)}
-.perks li span{color:var(--muted);font-size:13.5px}
+.vsub{margin:2px 2px 8px;color:var(--gold2);font-size:14px;font-weight:700;line-height:1.25}
+.perks{margin-bottom:8px}
+.perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.perks li{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:14px;background:#1b1b1b;border:1px solid rgba(255,255,255,.06);font-size:14px;line-height:1.25}
+.perks li i{font-style:normal;font-size:22px;flex:none;line-height:1.1}
+.perks li b{display:block;font-size:14px;margin-bottom:1px;color:var(--gold2)}
+.perks li span{color:var(--muted);font-size:12px}
 
 /* ---- Дүкен ---- */
 .shopgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -158,3 +158,10 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 #players{overflow:hidden;padding-bottom:calc(78px + max(12px,env(safe-area-inset-bottom)))}
 #players .sbar,#players .dndhint,#players .dndnote{flex:none}
 #players .plscroll{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:6px}
+
+/* ---- VIP экраны бір экранға сыяды ---- */
+#vip{padding-top:calc(var(--sat) + 2px)}
+#vip .pg{gap:8px}
+#vip .pghead{padding-top:0}
+#vip .pghead h1{font-size:24px}
+@media (max-height:720px){#vip .perks li span,#vip .vhow{display:none}}
