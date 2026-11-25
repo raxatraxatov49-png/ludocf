@@ -1,4 +1,4 @@
-/* ====== Жаңа бөлімдер: төменгі мәзір, рейтинг, VIP, дүкен, орындар, стикерлер ====== */
+/* ====== Жаңа бөлімдер: төменгі мәзір, VIP, дүкен, орындар, стикерлер ====== */
 :root{--gold:#f4c542;--gold2:#ffd96a;--panel:#161616;--panel2:#1f1f1f;--muted:#9aa0c4;--vio:#c9b8ff}
 .hidden{display:none!important}
 
@@ -22,26 +22,6 @@
 .seg{display:flex;padding:5px;border-radius:20px;background:#161616;border:1px solid rgba(255,255,255,.08)}
 .seg button{flex:1;padding:13px 6px;border-radius:15px;background:transparent;color:#9a9a9a;font-weight:800;font-size:16px}
 .seg button.on{background:#f3f3f3;color:#111}
-
-/* ---- Рейтинг ---- */
-.infocard{padding:12px 14px;border-radius:20px;border:1px solid rgba(244,197,66,.45);background:linear-gradient(180deg,#221d10,#17140c)}
-.infocard>b{display:block;color:var(--gold2);font-size:17px;margin-bottom:8px}
-.infocard small{display:block;margin-top:8px;color:var(--muted);font-size:12.5px;text-align:center}
-.ptsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.ptsgrid div{border-radius:13px;background:rgba(255,255,255,.06);padding:8px 4px;text-align:center;font-size:12px;color:var(--muted)}
-.ptsgrid div b{display:block;color:#fff;font-size:15px;margin-top:2px;letter-spacing:.3px}
-.rklist{display:flex;flex-direction:column;gap:8px}
-.rkrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:#1b1b1b;border:1px solid rgba(255,255,255,.05)}
-.rkrow .rk{width:34px;text-align:center;font-weight:900;font-size:20px;color:#8c8c8c;flex:none}
-.rkrow .ava{width:46px;height:46px;border-radius:50%;flex:none;background-size:cover;background-position:center;display:grid;place-items:center;font-weight:800;font-size:19px;color:#fff}
-.rkrow .nm{flex:1;min-width:0;display:flex;flex-direction:column}
-.rkrow .nm b{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rkrow .nm small{color:var(--muted);font-size:13px}
-.rkrow .sc{font-weight:900;font-size:19px;white-space:nowrap}
-.rkrow.top1{background:linear-gradient(90deg,#3a2e0c,#1b1b1b 70%);border-color:rgba(244,197,66,.35)}
-.rkrow.me{position:fixed;left:50%;transform:translateX(-50%);width:min(452px,calc(100% - 28px));bottom:calc(90px + max(10px,env(safe-area-inset-bottom)));z-index:5;border:1.5px solid rgba(244,197,66,.7);background:linear-gradient(180deg,#2a2412,#17140c);box-shadow:0 8px 24px rgba(0,0,0,.6)}
-.rkrow.isvip .nm b{color:var(--gold2)}
-.rkempty{padding:26px 10px;text-align:center;color:var(--muted)}
 
 /* ---- VIP ---- */
 .vipcard{position:relative;text-align:center;padding:22px 18px 18px;border-radius:28px;border:1px solid rgba(244,197,66,.5);background:radial-gradient(120% 90% at 50% 0%,#4a3a10,#1c1708 70%);box-shadow:0 12px 34px rgba(0,0,0,.6)}
@@ -132,4 +112,3 @@
 #game .pcard[data-skin="neon"] .die{box-shadow:0 0 10px #b36bff,0 3px 0 #2a0e55!important}
 #game .pcard[data-skin="gold"] .die{box-shadow:0 0 10px rgba(244,197,66,.6),0 3px 0 #8a5d08!important}
 
-#rating{padding-bottom:calc(170px + max(10px,env(safe-area-inset-bottom)))}
