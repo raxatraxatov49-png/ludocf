@@ -197,3 +197,60 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .sbtn{width:100%;padding:24px;border-radius:24px;background:#2f2f2f;color:#f2f2f2;font-size:20px;font-weight:800}
 .sbtn.red{background:#b9423f;color:#fff}
 .sbtn:active{transform:scale(.98)}
+
+/* ===== v2: ықшам мәзір мен түймелер ===== */
+#menu{padding-top:calc(var(--sat) + 10px)}
+.menuwrap{gap:10px}
+.prof{padding:8px 10px;border-radius:18px;gap:10px}
+.ringava{width:46px;height:46px;border-width:2px;padding:2px}
+.crown{font-size:16px;top:-13px}
+.pn b{font-size:17px}.pn small{font-size:12px}
+.hero{padding:14px 14px 12px;border-radius:20px}
+.hero h2{font-size:20px;margin-bottom:4px}
+.hero p{font-size:13px;margin-bottom:10px}
+.hero button{padding:12px;border-radius:14px;font-size:14px;letter-spacing:1.5px;gap:8px}
+.gold{box-shadow:0 3px 0 #b98322,0 6px 14px rgba(0,0,0,.35)}
+.blue{box-shadow:0 3px 0 #2a4e9e,0 6px 14px rgba(0,0,0,.35)}
+.tri{border-left-width:10px;border-top-width:6px;border-bottom-width:6px}
+.row{padding:10px 12px;border-radius:18px;gap:10px}
+.row .ico{width:40px;height:40px;border-radius:12px;font-size:21px}
+.row .rt b{font-size:16px}.row .rt em{font-size:13px}.row .rt em::before{width:10px;height:10px}
+.row .chev{font-size:26px}
+.wtitle{font-size:22px}
+.pill{padding:12px;border-radius:14px;font-size:14px;letter-spacing:1px;margin-bottom:10px;box-shadow:0 3px 0 #b98322,0 6px 14px rgba(0,0,0,.35)}
+
+/* төменгі панель (Мәзір / Чат) және «Берілемін / Шығу» сұрауы: кішірейтілді */
+.gbar{left:12px;right:12px;bottom:max(10px,env(safe-area-inset-bottom));border-radius:20px;padding:4px}
+.gbar .gb{padding:11px 8px;font-size:15px;gap:8px;border-radius:16px}
+.gbar .gb svg{width:20px;height:20px}
+.gbar .badge{top:4px;min-width:18px;height:18px;font-size:11px}
+.sheet{padding:12px 12px max(18px,env(safe-area-inset-bottom));gap:8px;border-radius:22px 22px 0 0}
+.sbtn{padding:14px;border-radius:16px;font-size:16px}
+#game,#wait{padding-bottom:calc(64px + max(10px,env(safe-area-inset-bottom)))}
+#wait{justify-content:flex-start}
+.hint{margin:2px 0 0;font-weight:600}
+.boardwrap{margin:6px 0}
+
+/* фишка таңдау: көрінетін жарқыраған сақина */
+.tok .halo{display:none;fill:rgba(255,255,255,.16);stroke:#fff;stroke-width:.07;pointer-events:none}
+.tok.can .halo{display:block;animation:halo .9s infinite ease-in-out;transform-box:fill-box;transform-origin:center}
+@keyframes halo{0%,100%{opacity:.5;transform:scale(.88)}50%{opacity:1;transform:scale(1.12)}}
+
+/* кубик: тұрған орнында 3D айналып, әдемі қонады */
+.pcard.rollz{z-index:auto}
+.pcard{cursor:default}
+.die{width:52px;height:52px;border-radius:14px;padding:9px;position:relative}
+.die i{width:10px;height:10px}
+.die::after{content:"";position:absolute;inset:-3px;border-radius:17px;border:2px solid var(--c);opacity:0;pointer-events:none}
+.die.rolling{animation:spin3d .68s cubic-bezier(.25,.7,.35,1);filter:none;z-index:auto}
+@keyframes spin3d{
+  0%{transform:perspective(240px) rotateX(0) rotateY(0) rotateZ(0) scale(1)}
+  35%{transform:perspective(240px) rotateX(260deg) rotateY(140deg) rotateZ(100deg) scale(1.14)}
+  70%{transform:perspective(240px) rotateX(520deg) rotateY(270deg) rotateZ(240deg) scale(1.1)}
+  100%{transform:perspective(240px) rotateX(720deg) rotateY(360deg) rotateZ(360deg) scale(1)}}
+.die.land{animation:landing .42s ease-out}
+.die.land::after{animation:ripple .5s ease-out}
+@keyframes landing{0%{transform:scale(1.18)}55%{transform:scale(.94)}100%{transform:scale(1)}}
+@keyframes ripple{0%{opacity:.95;transform:scale(.92)}100%{opacity:0;transform:scale(1.6)}}
+.die.ready{animation:pulse 1s infinite ease-in-out}
+@media (prefers-reduced-motion:reduce){.die.rolling{animation-duration:.3s}}
