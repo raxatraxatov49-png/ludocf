@@ -30,7 +30,25 @@
     <p data-i18n="friendDesc"></p>
     <button id="btnFriend" class="big alt" data-i18n="friendBtn"></button>
   </section>
+  <section class="card">
+    <h2 data-i18n="playersTitle"></h2>
+    <p data-i18n="playersDesc"></p>
+    <button id="btnPlayers" class="big ghostbig"><span data-i18n="playersBtn"></span> <small id="plOnlineBadge"></small></button>
+  </section>
   <div id="conn" class="conn hidden" data-i18n="connecting"></div>
+</main>
+
+<!-- Ойыншылар тізімі -->
+<main id="players" class="screen">
+  <div class="sbar">
+    <button class="sback" id="plBack" type="button" aria-label="Back">‹</button>
+    <h1 data-i18n="playersTitle"></h1>
+    <button id="btnDnd" class="dndbtn" type="button" role="switch" aria-checked="false" aria-label="DND"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="#f4c542"/></svg><span class="sw"></span></button>
+  </div>
+  <p id="plCount" class="dndhint"></p>
+  <p id="dndHint" class="dndhint" data-i18n="dndHint"></p>
+  <p id="dndNote" class="dndnote hidden" data-i18n="dndNote"></p>
+  <div id="plList" class="plscroll"></div>
 </main>
 
 <!-- Ойыншыларды күту (кездейсоқ іздеу де, доспен бөлме де) -->
@@ -74,6 +92,18 @@
     </div>
   </div>
 </main>
+
+<!-- Кіріс шақыру -->
+<div id="inv" class="over hidden" style="z-index:8">
+  <div class="obox">
+    <div class="ava big" id="invAva"></div>
+    <div class="oname" id="invName" style="margin:10px 0 4px"></div>
+    <div class="otitle" data-i18n="invText"></div>
+    <div id="invTm" class="wtimer"></div>
+    <button id="invYes" class="pill go" data-i18n="accept"></button>
+    <button id="invNo" class="pill ghost" data-i18n="decline"></button>
+  </div>
+</div>
 
 <div id="toast" class="toast hidden"></div>
 <script src="app.js"></script>
