@@ -13,21 +13,21 @@ const qs = new URLSearchParams(location.search);
 
 /* ---------- Тіл ---------- */
 const I18N = {
-  kk: { role: 'Лудо ойыншысы', randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
+  kk: { leftMark: 'Шықты', kicked: 'Жаның таусылды, ойыннан шығарылдың', role: 'Лудо ойыншысы', randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
     friendTitle: 'Доспен ойнау', friendDesc: 'Бөлме аш та, достарыңды шақыр', friendBtn: 'ДОСПЕН ОЙНАУ', connecting: 'Қосылуда…',
     waiting: 'Ойыншылар күтілуде', you: 'Сіз', invite: 'Шақыру', startGame: 'Ойынды бастау', cancel: 'Бас тарту',
     winner: 'Жеңімпаз', toMenu: 'Мәзірге', leaveAsk: 'Ойыннан шығасың ба?', leave: 'Шығу', stay: 'Қалу',
     hintRoll: 'Сенің кезегің — сүйекті бас', hintMove: 'Фишканы таңда', hintOther: 'жүріс жасауда…',
     inviteText: 'Менімен Лудо ойнайық! 🎲', room_gone: 'Бөлме табылмады', room_full: 'Бөлме толы', auth: 'Кіру қатесі',
     replaced: 'Басқа құрылғыда ашылды', noBot: 'Боттың username-і көрсетілмеген' },
-  uz: { role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
+  uz: { leftMark: 'Chiqdi', kicked: 'Jonlaring tugadi, o‘yindan chiqarilding', role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
     friendTitle: 'Do‘st bilan o‘ynash', friendDesc: 'Xona och va do‘stlaringni taklif qil', friendBtn: 'DO‘ST BILAN O‘YNASH', connecting: 'Ulanmoqda…',
     waiting: 'O‘yinchilar kutilmoqda', you: 'Siz', invite: 'Taklif qilish', startGame: 'O‘yinni boshlash', cancel: 'Bekor qilish',
     winner: 'G‘olib', toMenu: 'Menyuga', leaveAsk: 'O‘yindan chiqasanmi?', leave: 'Chiqish', stay: 'Qolish',
     hintRoll: 'Navbating — kubikni bos', hintMove: 'Toshni tanla', hintOther: 'yurmoqda…',
     inviteText: 'Men bilan Ludo o‘ynaymiz! 🎲', room_gone: 'Xona topilmadi', room_full: 'Xona to‘la', auth: 'Kirish xatosi',
     replaced: 'Boshqa qurilmada ochildi', noBot: 'Bot username ko‘rsatilmagan' },
-  ru: { role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
+  ru: { leftMark: 'Вышел', kicked: 'Жизни закончились, вы выбыли из игры', role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
     friendTitle: 'Играть с другом', friendDesc: 'Создай комнату и пригласи друзей', friendBtn: 'ИГРАТЬ С ДРУГОМ', connecting: 'Подключение…',
     waiting: 'Ожидание игроков', you: 'Вы', invite: 'Пригласить', startGame: 'Начать игру', cancel: 'Отмена',
     winner: 'Победитель', toMenu: 'В меню', leaveAsk: 'Выйти из игры?', leave: 'Выйти', stay: 'Остаться',
@@ -363,21 +363,23 @@ function renderGame(g) {
 
   for (let c = 0; c < 4; c++) {
     const el = $('card' + c);
-    const seat = g.seats.find(s => s.color === c && !s.left);
+    const seat = g.seats.find(s => s.color === c);
     el.style.setProperty('--c', C[c]);
     if (!seat) { el.classList.add('off'); el.classList.remove('act'); if (el.dataset.uid) { el.innerHTML = ''; el.dataset.uid = ''; } continue; }
     el.classList.remove('off');
     if (el.dataset.uid !== seat.id) {
       el.dataset.uid = seat.id;
-      el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="pips"><i></i><i></i><i></i><i></i></span><span class="tm"></span></div></div>' +
+      el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="hearts"><i></i><i></i><i></i></span><span class="gonemark"></span><span class="tm"></span></div></div>' +
         '<button class="die" type="button" aria-label="dice"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></button>';
       el.querySelector('.die').onclick = e => { if (e.currentTarget.classList.contains('ready')) send({ t: 'roll' }); };
       setAva(el.querySelector('.ava'), seat);
       S.dieBusy[c] = false;
     }
-    el.classList.toggle('act', g.turn === c && g.winner === null);
-    const done = (g.tokens[c] || []).filter(s => s === 56).length;
-    el.querySelectorAll('.pips i').forEach((p, i) => p.classList.toggle('on', i < done));
+    el.classList.toggle('gone', Boolean(seat.left));
+    el.querySelector('.gonemark').textContent = seat.left ? '🚪 ' + t('leftMark') : '';
+    el.classList.toggle('act', g.turn === c && g.winner === null && !seat.left);
+    const lives = seat.lives == null ? 3 : seat.lives;
+    el.querySelectorAll('.hearts i').forEach((p, i) => p.classList.toggle('on', i < lives));
     el.querySelector('b').textContent = seat.id === S.me.id ? t('you') : seat.name;
     if (!S.dieBusy[c]) setDie(c, seat.dice);
     el.querySelector('.die').classList.toggle('ready', seat.id === S.me.id && g.turn === c && g.phase === 'roll' && g.winner === null && !S.dieBusy[c]);
@@ -386,11 +388,7 @@ function renderGame(g) {
   syncTokens(g);
 
   const turnSeat = g.seats.find(s => s.color === g.turn);
-  $('hint').textContent = g.winner !== null ? '' :
-    g.spectator ? '👁 ' + t('watching') + (g.viewers > 1 ? ' · ' + g.viewers : '') :
-    myTurn && g.phase === 'roll' ? t('hintRoll') :
-    myTurn && g.phase === 'move' ? t('hintMove') :
-    myTurn ? '' : (turnSeat ? turnSeat.name + ' ' + t('hintOther') : '');
+  $('hint').textContent = g.winner === null && g.spectator ? '👁 ' + t('watching') + (g.viewers > 1 ? ' · ' + g.viewers : '') : '';
   if (myTurn && !S.lastTurnMine) haptic('success');
   S.lastTurnMine = myTurn;
 
@@ -444,6 +442,7 @@ function renderWait() {
   $('btnInvite').classList.toggle('hidden', !room);                         // шақыру: бөлмедегі барлығына
   $('btnStart').classList.toggle('hidden', !(isHost && list.length >= 2));   // бастау: тек жаратушыға, ≥2 адамда
   $('btnChatW').classList.toggle('hidden', !room);
+  $('btnWaitBack').classList.toggle('hidden', !room);                       // есік тек доспен ойында (кездейсоқта «Бас тарту» бар)
   $('btnCancel').classList.toggle('hidden', !q || Boolean(room));            // кездейсоқ іздеуде ғана
   $('wTimer').style.display = room ? 'none' : '';
   tick();
@@ -612,6 +611,9 @@ function onMsg(m) {
       }
       show('game'); renderGame(m);
       break;
+    case 'kicked':
+      toast(t('kicked')); haptic('error');
+      break;
     case 'idle':
       S.room = null; S.queue = null; S.game = null; S.chat = []; S.unread = 0; updBadge(); $('chat').classList.add('hidden');
       $('over').classList.add('hidden');
@@ -672,7 +674,7 @@ $('btnFriend').onclick = () => send({ t: 'room_create' });
 $('btnInvite').onclick = invite;
 $('btnStart').onclick = () => send({ t: 'room_start' });
 $('btnCancel').onclick = () => { send({ t: 'cancel' }); show('menu'); };
-$('btnWaitBack').onclick = () => { send({ t: S.room ? 'room_leave' : 'cancel' }); S.room = null; S.queue = null; show('menu'); };
+$('btnWaitBack').onclick = () => { $('ask').classList.remove('hidden'); };
 $('btnChatG').onclick = openChat;
 $('btnChatW').onclick = openChat;
 $('chatClose').onclick = () => $('chat').classList.add('hidden');
@@ -685,7 +687,11 @@ $('btnGameBack').onclick = () => {
   $('ask').classList.remove('hidden');
 };
 $('askNo').onclick = () => $('ask').classList.add('hidden');
-$('askYes').onclick = () => { $('ask').classList.add('hidden'); send({ t: 'leave' }); S.game = null; show('menu'); };
+$('askYes').onclick = () => {
+  $('ask').classList.add('hidden');
+  if (S.screen === 'wait') { send({ t: S.room ? 'room_leave' : 'cancel' }); S.room = null; S.queue = null; show('menu'); return; }
+  send({ t: 'leave' }); S.game = null; show('menu');
+};
 $('btnOver').onclick = () => { if (S.game && S.game.spectator) return leaveWatch(); $('over').classList.add('hidden'); send({ t: 'leave' }); S.game = null; show('menu'); };
 document.querySelectorAll('#langs button').forEach(b => {
   b.onclick = () => {
