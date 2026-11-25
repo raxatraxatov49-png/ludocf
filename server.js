@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { WebSocketServer } = require('./cf/ws');
 const L = require('./lib/ludo');
 const { verifyInitData } = require('./lib/telegram');
+const SK = require('./lib/skins');
 
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const DEV = process.env.DEV === '1';
@@ -37,8 +38,14 @@ let qTimer = null;
 let qEnd = 0;
 let gameSeq = 0;
 
+// Кубик: криптографиялық кездейсоқ сан (Math.random орнына, әділдік үшін)
+function rand6() {
+  const b = new Uint32Array(1);
+  for (;;) { globalThis.crypto.getRandomValues(b); if (b[0] < 4294967292) return 1 + (b[0] % 6); }   // 2^32 дейін біркелкі бөлу
+}
+
 const isOnline = u => Boolean(u && u.ws && u.ws.readyState === 1);
-const pub = u => ({ id: u.id, name: u.name, avatar: u.avatar || null });
+const pub = u => { const p = profiles.get(u.id); return { id: u.id, name: u.name, avatar: u.avatar || null, vip: Boolean(p && p.vip) }; };
 const inGame = u => Boolean(u && u.game && games.has(u.game));
 
 /* ================= Профильдер (Durable Object сақтауында) ================= */
@@ -58,11 +65,101 @@ function touchProfile(u, seenNow) {
   let p = profiles.get(u.id);
   const now = Date.now();
   const changed = !p || p.name !== u.name || (p.avatar || null) !== (u.avatar || null);
-  if (!p) { p = { id: u.id, name: u.name, avatar: u.avatar || null, seen: now, dnd: false }; profiles.set(u.id, p); }
+  if (!p) { p = { id: u.id, name: u.name, avatar: u.avatar || null, seen: now, dnd: false, created: now }; profiles.set(u.id, p); }
   p.name = u.name; p.avatar = u.avatar || null;
   if (seenNow) p.seen = now;
   if (changed || seenNow) { playersBaseAt = 0; saveProfile(p); }
   return p;
+}
+
+/* ================= Ұпай, апталық рейтинг, VIP, скиндер ================= */
+
+const WEEK_MS = 7 * 24 * 3600 * 1000;
+const WEEK0 = Date.UTC(2026, 0, 5);                 // дүйсенбі 00:00 UTC: апта осыдан есептеледі
+const weekIdx = (n = Date.now()) => Math.floor((n - WEEK0) / WEEK_MS);
+const weekEndAt = () => WEEK0 + (weekIdx() + 1) * WEEK_MS;
+function normWeek(p) { const w = weekIdx(); if (p.wk !== w) { p.wk = w; p.wpts = 0; } }
+const VIP_REFS = 7;                                  // VIP алу үшін шақырылатын дос саны
+const ownsSkin = (p, id) => Boolean(p && SK.byId[id] && (id === 'classic' || p.vip || (p.skins || []).includes(id)));
+const skinOf = p => (p && ownsSkin(p, p.skin || 'classic') ? (p.skin || 'classic') : 'classic');
+
+function meInfo(p) {
+  normWeek(p);
+  return { t: 'me', vip: Boolean(p.vip), refs: (p.refs || []).length, need: VIP_REFS, pts: p.pts || 0, wpts: p.wpts || 0,
+    wins: p.wins || 0, games: p.games || 0, skin: skinOf(p), skins: p.skins || [] };
+}
+function sendMe(id) { const u = users.get(id), p = profiles.get(id); if (u && p) send(u, meInfo(p)); }
+
+function addPoints(uid, pts) {
+  const p = profiles.get(uid);
+  if (!p || !pts) return;
+  normWeek(p);
+  p.pts = (p.pts || 0) + pts;
+  p.wpts = (p.wpts || 0) + pts;
+  saveProfile(p);
+  sendMe(uid);
+}
+
+function rankPayload(me, scope) {
+  const wk = scope !== 'all';
+  const rows = [];
+  for (const p of profiles.values()) {
+    normWeek(p);
+    const v = wk ? (p.wpts || 0) : (p.pts || 0);
+    if (v > 0 || p.id === me) rows.push({ id: p.id, name: p.name, avatar: p.avatar || null, vip: Boolean(p.vip), v });
+  }
+  rows.sort((a, b) => (b.v - a.v) || String(a.name).localeCompare(String(b.name)));
+  const idx = rows.findIndex(r => r.id === me);
+  return { t: 'rank', scope: wk ? 'week' : 'all', list: rows.filter(r => r.v > 0).slice(0, 50),
+    me: { rank: idx < 0 ? null : idx + 1, v: idx < 0 ? 0 : rows[idx].v }, resetMs: wk ? weekEndAt() - Date.now() : 0 };
+}
+
+// Реферал: дос сілтемемен бірінші рет кірсе (профилі жаңа), шақырушыға +1. 7 дос = VIP
+function onRef(u, refId) {
+  refId = String(refId || '');
+  const p = profiles.get(u.id);
+  const inv = profiles.get(refId);
+  if (!p || !inv || refId === u.id || p.refBy || !p.created || Date.now() - p.created > 30 * 60 * 1000) return;
+  p.refBy = refId;
+  saveProfile(p);
+  inv.refs = inv.refs || [];
+  if (!inv.refs.includes(u.id)) inv.refs.push(u.id);
+  const justNow = !inv.vip && inv.refs.length >= VIP_REFS;
+  if (justNow) inv.vip = true;
+  saveProfile(inv);
+  sendMe(refId);
+  if (justNow) send(users.get(refId), { t: 'vip_unlocked' });
+}
+
+function grantSkin(uid, id, charge) {
+  const p = profiles.get(uid);
+  if (!p || !SK.byId[id]) return false;
+  if (charge) {
+    p.charges = p.charges || [];
+    if (p.charges.includes(charge)) return true;      // қайталанған төлем хабарламасы
+    p.charges.push(charge); if (p.charges.length > 30) p.charges.shift();
+  }
+  p.skins = p.skins || [];
+  if (!p.skins.includes(id)) p.skins.push(id);
+  p.skin = id;
+  saveProfile(p);
+  sendMe(uid);
+  return true;
+}
+
+async function shopBuy(u, id) {
+  const sk = SK.byId[String(id)];
+  const p = profiles.get(u.id);
+  if (!sk || !sk.price || !p) return;
+  if (ownsSkin(p, sk.id)) return send(u, { t: 'error', code: 'owned' });
+  if (DEV) { grantSkin(u.id, sk.id, null); return; }  // сынақ режимінде төлемсіз
+  if (!BOT_TOKEN) return send(u, { t: 'error', code: 'pay_unavail' });
+  const r = await tgApi('createInvoiceLink', {
+    title: 'Ludo: ' + sk.id, description: 'Ludo dice & token skin: ' + sk.id,
+    payload: 'skin:' + sk.id + ':' + u.id, provider_token: '', currency: 'XTR', prices: [{ label: sk.id, amount: sk.price }]
+  });
+  if (r && r.ok) send(u, { t: 'invoice', url: r.result, skin: sk.id });
+  else send(u, { t: 'error', code: 'pay_unavail' });
 }
 
 function send(u, msg) {
@@ -97,7 +194,7 @@ function flushQueue() {
   cleanQueue();
   if (queue.length >= 2) {
     const take = queue.splice(0, MAX_PLAYERS);
-    startGame(take.map(id => users.get(id)));
+    startGame(take.map(id => users.get(id)), true);   // ұпай тек кездейсоқ ойында
     if (queue.length) { armQueue(); broadcastQueue(); }
   } else {
     // 20 секундта қарсылас табылмады: іздеуді тоқтатып, бас мәзірге қайтарамыз
@@ -204,7 +301,8 @@ function snapshot(g, spectator) {
     spectator: Boolean(spectator),
     viewers: g.watchers.size,
     id: g.id,
-    seats: g.seats.map(s => ({ color: s.color, id: s.uid, name: s.name, avatar: s.avatar, auto: s.auto, left: s.left, lives: s.lives == null ? 3 : s.lives, dice: s.shown })),
+    seats: g.seats.map(s => ({ color: s.color, id: s.uid, name: s.name, avatar: s.avatar, auto: s.auto, left: s.left, lives: s.lives == null ? 3 : s.lives, dice: s.shown, place: s.place, pts: s.pts, skin: s.skin, vip: s.vip })),
+    ranked: g.ranked,
     tokens: g.tokens,
     turn: cur(g).color,
     phase: g.phase,
@@ -240,13 +338,14 @@ function shuffle(a) {
   return a;
 }
 
-function startGame(list) {
+function startGame(list, ranked) {
   list = shuffle(list.filter(Boolean)).slice(0, MAX_PLAYERS);
   if (list.length < 2) return null;
   const colors = L.COLORS_FOR[list.length];
   const g = {
     id: 'g' + (++gameSeq),
-    seats: list.map((u, i) => ({ uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, lives: 3, left: false, shown: 1 + Math.floor(Math.random() * 6) })),
+    seats: list.map((u, i) => { const p = profiles.get(u.id); return { uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, lives: 3, left: false, shown: rand6(), place: null, pts: 0, vip: Boolean(p && p.vip), skin: skinOf(p) }; }),
+    ranked: Boolean(ranked), places: [],
     tokens: L.newTokens(colors),
     turnIdx: 0, phase: 'roll', dice: null, legal: [], rollSeq: 0, rollColor: null, moveSeq: 0, chat: [], sixes: 0,
     deadline: 0, timer: null, watchers: new Set(), winner: null, reason: null, last: null, at: Date.now(), emptySince: 0
@@ -289,17 +388,37 @@ function eliminate(g, seat) {
   seat.lives = 0;
   const u = users.get(seat.uid);
   if (u && u.game === g.id) { u.game = null; send(u, { t: 'kicked' }); send(u, { t: 'idle' }); }
-  const alive = g.seats.filter(x => !x.left);
-  if (alive.length <= 1) {
-    if (alive.length === 1) return finish(g, alive[0].color, 'left');
-    return destroyGame(g);
-  }
+  if (checkEnd(g)) return;
   if (cur(g) === seat) nextTurn(g); else broadcastGame(g);
+}
+
+/* ---- Орындар: бірінші болып финишке жеткен 1-орын, ойын қалғандарға жалғаса береді ---- */
+const activeSeats = g => g.seats.filter(s => !s.left && s.place == null);
+
+function assignPlace(g, seat) {
+  const place = g.places.length + 1;
+  g.places.push(seat.color);
+  seat.place = place;
+  const table = SK.PTS[g.seats.length] || [];
+  // ұпай: тек кездейсоқ ойын; ойын басында тастап кеткен жағдайда берілмейді (фарм қорғанысы)
+  seat.pts = g.ranked && g.moveSeq >= 8 ? (table[place - 1] || 0) : 0;
+  if (seat.pts) addPoints(seat.uid, seat.pts);
+}
+
+// Белсенді ойыншы 1-ге түссе, ол соңғы орынды алады да ойын аяқталады
+function checkEnd(g) {
+  if (g.winner !== null) return true;
+  const a = activeSeats(g);
+  if (a.length > 1) return false;
+  if (a.length === 1) assignPlace(g, a[0]);
+  if (!g.places.length) { destroyGame(g); return true; }
+  finish(g, g.places[0], 'win');
+  return true;
 }
 
 function roll(g) {
   const seat = cur(g);
-  const d = 1 + Math.floor(Math.random() * 6);
+  const d = rand6();
   g.dice = d;
   seat.shown = d;                        // кубикте соңғы түскен сан тұра береді
   g.rollColor = seat.color;
@@ -328,7 +447,11 @@ function moveToken(g, i) {
   const r = L.move(g.tokens, seat.color, i, d);
   g.last = { color: seat.color, i, from: r.from, to: r.to, captured: r.captured };
   g.moveSeq++;
-  if (L.won(g.tokens, seat.color)) return finish(g, seat.color, 'win');
+  if (L.won(g.tokens, seat.color)) {     // 4 фишка финишке жетті: орын беріледі, қалғандар ойнай береді
+    assignPlace(g, seat);
+    if (checkEnd(g)) return;
+    return nextTurn(g);
+  }
   if (r.extra) return beginTurn(g);      // 6 / жеу / финиш: тағы лақтырады
   nextTurn(g);
 }
@@ -337,12 +460,27 @@ function nextTurn(g) {
   g.sixes = 0;
   for (let k = 0; k < g.seats.length; k++) {
     g.turnIdx = (g.turnIdx + 1) % g.seats.length;
-    if (!cur(g).left) break;
+    if (!cur(g).left && cur(g).place == null) break;
   }
   beginTurn(g);
 }
 
+// Статистика: ойын саны мен жеңіс (Durable Object сақтауында)
+function recordStats(g, color) {
+  g.seats.forEach(s => {
+    const p = profiles.get(s.uid);
+    if (!p) return;
+    p.games = (p.games || 0) + 1;
+    if (s.color === color) p.wins = (p.wins || 0) + 1;
+    saveProfile(p);
+    sendMe(s.uid);
+  });
+  playersBaseAt = 0;
+}
+
 function finish(g, color, reason) {
+  if (g.winner !== null) return;
+  recordStats(g, color);
   clearTimeout(g.timer);
   g.winner = color;
   g.reason = reason;
@@ -360,11 +498,7 @@ function leaveGame(u) {
   if (!seat || seat.left || g.winner !== null) { if (g.winner !== null) maybeDrop(g); return; }
   seat.left = true;
   seat.auto = true;
-  const alive = g.seats.filter(s => !s.left);
-  if (alive.length <= 1) {
-    if (alive.length === 1) return finish(g, alive[0].color, 'left');
-    return destroyGame(g);
-  }
+  if (checkEnd(g)) return;
   if (cur(g) === seat) nextTurn(g); else broadcastGame(g);
 }
 
@@ -390,9 +524,16 @@ function chatMsg(u, text) {
   const now = Date.now();
   if (now - (u.lastChat || 0) < CHAT_GAP) return;
   u.lastChat = now;
-  let targets, color = null;
-  const g = games.get(u.game);
-  if (g) {
+  let targets, color = null, spec = false;
+  const prof = profiles.get(u.id);
+  const vip = Boolean(prof && prof.vip);
+  const g = games.get(u.game) || games.get(u.watch);
+  if (g && g.id === u.watch && g.id !== u.game) {
+    // көрермен: чатты тек VIP көреді және жаза алады
+    if (!vip) return send(u, { t: 'error', code: 'vip_only' });
+    spec = true;
+    targets = g.seats.filter(s => !s.left).map(s => users.get(s.uid));
+  } else if (g) {
     const seat = seatOf(g, u.id);
     if (!seat || seat.left) return;
     color = seat.color;
@@ -402,8 +543,11 @@ function chatMsg(u, text) {
     if (!r) return;
     targets = r.members.map(id => users.get(id));
   }
-  const msg = { t: 'chat', id: u.id, name: u.name, color, text, at: now };
-  if (g) { g.chat.push(msg); if (g.chat.length > 50) g.chat.shift(); }
+  const msg = { t: 'chat', id: u.id, name: u.name, color, text, at: now, vip, spec };
+  if (g) {
+    g.chat.push(msg); if (g.chat.length > 50) g.chat.shift();
+    for (const id of g.watchers) { const w = users.get(id); const wp = profiles.get(id); if (w && wp && wp.vip) targets.push(w); }   // VIP көрермендер де көреді
+  }
   targets.forEach(x => send(x, msg));
 }
 
@@ -541,6 +685,8 @@ function watchStart(u, playerId) {
   g.watchers.add(u.id);
   u.watch = g.id;
   send(u, snapshot(g, true));
+  const wp = profiles.get(u.id);
+  if (wp && wp.vip) send(u, { t: 'chat_hist', list: g.chat || [] });
   broadcastGame(g);                        // көрермен санын жаңартамыз
 }
 
@@ -563,6 +709,28 @@ function handle(u, m) {
       return send(u, { t: 'dnd', on: p.dnd });
     }
     case 'ping': return send(u, { t: 'pong' });
+    case 'rank_get': return send(u, rankPayload(u.id, m.scope === 'all' ? 'all' : 'week'));
+    case 'me_get': case 'shop_get': { const p = profiles.get(u.id); return p && send(u, meInfo(p)); }
+    case 'ref': return onRef(u, m.id);
+    case 'shop_buy': return void shopBuy(u, m.id).catch(e => console.error('shop:', e && e.message));
+    case 'skin_set': {
+      const p = profiles.get(u.id);
+      if (!p || !ownsSkin(p, String(m.id))) return;
+      p.skin = String(m.id); saveProfile(p); return sendMe(u.id);
+    }
+    case 'sticker': {
+      const g = games.get(u.game);
+      const seat = g && seatOf(g, u.id);
+      if (!seat || seat.left || g.winner !== null) return;
+      const set = (SK.byId[seat.skin] || {}).stickers || [];
+      const k = Number(m.k), now = Date.now();
+      if (!Number.isInteger(k) || !set[k] || now - (u.lastSticker || 0) < 1500) return;
+      u.lastSticker = now;
+      const msg = { t: 'sticker', color: seat.color, e: set[k] };
+      g.seats.forEach(x => { if (!x.left) send(users.get(x.uid), msg); });
+      for (const id of g.watchers) send(users.get(id), msg);
+      return;
+    }
     case 'chat': return chatMsg(u, m.text);
     case 'find': return joinQueue(u);
     case 'cancel': return leaveQueue(u);
@@ -608,7 +776,7 @@ function onAuth(ws, m) {
   u.name = info.name; u.avatar = info.avatar || null; u.ws = ws;
   ws.user = u;
   const prof = touchProfile(u, true);
-  send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME, app: MINI_APP_SHORT, dnd: Boolean(prof.dnd) });
+  send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME, app: MINI_APP_SHORT, dnd: Boolean(prof.dnd), catalog: SK.SKINS, info: meInfo(prof) });
   const g = games.get(u.game);
   if (g) {
     const seat = seatOf(g, u.id);
@@ -627,7 +795,6 @@ function onClose(ws) {
   clearPInvitesOf(u.id);
   unwatch(u);
   touchProfile(u, true);
-  const g = games.get(u.game);
   // байланыс үзілсе, автомат жүрмейді: 25 секундта жүрмесе жаны кете береді
 }
 
@@ -637,6 +804,10 @@ wss.on('connection', ws => {
     let m;
     try { m = JSON.parse(typeof d === 'string' ? d : String(d)); } catch (e) { return; }
     if (!m || typeof m.t !== 'string') return;
+    // флуд қорғанысы: секундына 30-дан артық хабарлама өтпейді
+    const now = Date.now();
+    if (now - (ws.rateAt || 0) >= 1000) { ws.rateAt = now; ws.rateN = 0; }
+    if (++ws.rateN > 30) return;
     if (m.t === 'auth') return onAuth(ws, m);
     if (ws.user) handle(ws.user, m);
   }));
@@ -657,14 +828,21 @@ setInterval(safe(() => {
     if ((g.emptySince && now - g.emptySince > 60000) || (g.winner !== null && now - g.deadline > 10 * 60000)) destroyGame(g);
   }
   for (const [id, u] of users) if (!isOnline(u) && !inGame(u)) users.delete(id);
+  for (const [k, rec] of pdecl) if (rec.until < now && now - rec.last > PDECLINE_RESET) pdecl.delete(k);   // жад ағып кетпеуі үшін
 }), 20000);
 
 /* ================= Telegram бот ================= */
 
 const TXT = {
-  kk: { start: '🎲 <b>Лудо</b>\nДостарыңмен немесе кездейсоқ ойыншылармен ойна!', play: '🎮 Ойнау', cmd: 'Ойынды ашу' },
-  uz: { start: '🎲 <b>Ludo</b>\nDo‘stlaring yoki tasodifiy o‘yinchilar bilan o‘yna!', play: '🎮 O‘ynash', cmd: 'O‘yinni ochish' },
-  ru: { start: '🎲 <b>Лудо</b>\nИграй с друзьями или случайными игроками!', play: '🎮 Играть', cmd: 'Открыть игру' }
+  kk: { start: '🎲 <b>Лудо</b>\nДостарыңмен немесе кездейсоқ ойыншылармен ойна!', play: '🎮 Ойнау', cmd: 'Ойынды ашу', helpCmd: 'Көмек', rulesCmd: 'Ойын ережелері',
+    help: '🎲 <b>Лудо</b>\n/start — ойынды ашу\n/rules — ережелер\n/help — көмек',
+    rules: '📖 <b>Ережелер</b>\n• 6 шықса фишка үйден шығады\n• 6 / жеп алу / финишке жету — қосымша лақтыру\n• Қатарынан 3 алты — кезек өтеді\n• ☆ және бастапқы ұяшықтарда фишканы жеуге болмайды\n• Финишке дәл сан керек\n• 4 фишкасын бірінші жеткізген жеңеді\n• Бір әрекетке 25 секунд, 3 рет өткізсе ойыннан шығарылады' },
+  uz: { start: '🎲 <b>Ludo</b>\nDo‘stlaring yoki tasodifiy o‘yinchilar bilan o‘yna!', play: '🎮 O‘ynash', cmd: 'O‘yinni ochish', helpCmd: 'Yordam', rulesCmd: 'O‘yin qoidalari',
+    help: '🎲 <b>Ludo</b>\n/start — o‘yinni ochish\n/rules — qoidalar\n/help — yordam',
+    rules: '📖 <b>Qoidalar</b>\n• 6 tushsa, tosh uydan chiqadi\n• 6 / urib olish / marraga yetish — qo‘shimcha tashlash\n• Ketma-ket 3 ta oltilik — navbat o‘tadi\n• ☆ va boshlang‘ich kataklarda toshni urib bo‘lmaydi\n• Marraga aniq son kerak\n• 4 toshini birinchi yetkazgan g‘olib\n• Har yurishga 25 soniya, 3 marta o‘tkazsa o‘yindan chiqariladi' },
+  ru: { start: '🎲 <b>Лудо</b>\nИграй с друзьями или случайными игроками!', play: '🎮 Играть', cmd: 'Открыть игру', helpCmd: 'Помощь', rulesCmd: 'Правила игры',
+    help: '🎲 <b>Лудо</b>\n/start — открыть игру\n/rules — правила\n/help — помощь',
+    rules: '📖 <b>Правила</b>\n• Фишка выходит из дома при выпадении 6\n• 6 / съедение / финиш — дополнительный бросок\n• Три шестёрки подряд — ход переходит\n• На звёздах и стартовых клетках фишку съесть нельзя\n• В финиш нужно точное число\n• Побеждает тот, кто первым приведёт 4 фишки\n• 25 секунд на ход, 3 пропуска — выбываешь из игры' }
 };
 const pickLang = c => { c = String(c || '').slice(0, 2).toLowerCase(); return TXT[c] ? c : 'kk'; };
 
@@ -675,13 +853,39 @@ async function tgApi(method, data) {
   return r.json();
 }
 
+const parsePay = (payload, fromId) => {
+  const m = /^skin:([a-z]+):(\d+)$/.exec(String(payload || ''));
+  return m && SK.byId[m[1]] && SK.byId[m[1]].price && m[2] === String(fromId) ? m[1] : null;
+};
+
 async function handleUpdate(update) {
+  const pq = update && update.pre_checkout_query;
+  if (pq) {   // Stars төлемін растау: тек біздің тапсырыс, дұрыс сома, ойыншыда әлі жоқ скин
+    const id = parsePay(pq.invoice_payload, pq.from && pq.from.id);
+    const p = profiles.get(String(pq.from && pq.from.id));
+    const ok = Boolean(id && pq.currency === 'XTR' && pq.total_amount === SK.byId[id].price && !(p && ownsSkin(p, id)));
+    await tgApi('answerPreCheckoutQuery', ok ? { pre_checkout_query_id: pq.id, ok: true } : { pre_checkout_query_id: pq.id, ok: false, error_message: 'Order is not available' });
+    return;
+  }
   const msg = update && update.message;
-  if (!msg || typeof msg.text !== 'string' || !msg.text.startsWith('/start')) return;
+  const sp = msg && msg.successful_payment;
+  if (sp) {
+    const id = parsePay(sp.invoice_payload, msg.from && msg.from.id);
+    if (id && sp.currency === 'XTR') grantSkin(String(msg.from.id), id, sp.telegram_payment_charge_id);
+    return;
+  }
+  if (!msg || typeof msg.text !== 'string') return;
+  const cmd = (msg.text.match(/^\/(\w+)/) || [])[1];
   const lang = pickLang(msg.from && msg.from.language_code);
+  if (cmd === 'help' || cmd === 'rules') {
+    await tgApi('sendMessage', { chat_id: msg.chat.id, text: TXT[lang][cmd], parse_mode: 'HTML' });
+    return;
+  }
+  if (cmd !== 'start') return;
   const param = (msg.text.split(/\s+/)[1] || '').trim();
   const room = /^room_[A-Za-z0-9]{4,8}$/.test(param) ? param.slice(5) : '';
-  const url = MINI_APP_URL + '/?lang=' + lang + (room ? '&room=' + room : '');
+  const ref = /^ref_\d{1,15}$/.test(param) ? param.slice(4) : '';
+  const url = MINI_APP_URL + '/?lang=' + lang + (room ? '&room=' + room : '') + (ref ? '&ref=' + ref : '');
   await tgApi('sendMessage', {
     chat_id: msg.chat.id, text: TXT[lang].start, parse_mode: 'HTML',
     reply_markup: { inline_keyboard: [[{ text: TXT[lang].play, web_app: { url } }]] }
@@ -691,11 +895,12 @@ async function handleUpdate(update) {
 async function setupTelegram() {
   if (!BOT_TOKEN || DEV || process.env.SKIP_WEBHOOK === '1') return;
   try {
-    await tgApi('setMyCommands', { commands: [{ command: 'start', description: TXT.kk.cmd }] });
+    const cmds = c => [{ command: 'start', description: TXT[c].cmd }, { command: 'rules', description: TXT[c].rulesCmd }, { command: 'help', description: TXT[c].helpCmd }];
+    await tgApi('setMyCommands', { commands: cmds('kk') });
     for (const code of ['uz', 'ru']) {
-      await tgApi('setMyCommands', { commands: [{ command: 'start', description: TXT[code].cmd }], language_code: code });
+      await tgApi('setMyCommands', { commands: cmds(code), language_code: code });
     }
-    const r = await tgApi('setWebhook', { url: WEBHOOK_URL, secret_token: WEBHOOK_SECRET, allowed_updates: ['message'] });
+    const r = await tgApi('setWebhook', { url: WEBHOOK_URL, secret_token: WEBHOOK_SECRET, allowed_updates: ['message', 'pre_checkout_query'] });
     console.log('Telegram webhook:', r.description);
   } catch (e) { console.error('Telegram баптау қатесі:', e && e.message); }
 }
