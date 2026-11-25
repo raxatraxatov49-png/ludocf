@@ -126,6 +126,33 @@ const EXTRA3 = {
     chatLocked: 'При просмотре игры чат видят и пишут в нём только VIP-игроки. Пригласи 7 друзей и получи VIP!', viewer: 'зритель' }
 };
 Object.keys(EXTRA3).forEach(l => Object.assign(I18N[l], EXTRA3[l]));
+const EXTRA4 = {
+  kk: { vipLocked: 'Ludo VIP', vipLockedP: '7 досыңды шақыр — 7 күнге VIP ал', vipActive: 'VIP белсенді', vipActiveP: 'Барлық мүмкіндіктер ашық. Профиліңізде 👑 белгісі көрінеді.',
+    vipProg: 'Шақырылды: {n} / {m}', vipLeft: 'Қалды: {t}', vipFmtD: '{d} күн {h} сағ', vipFmtH: '{h} сағ {m} мин',
+    vipInvite: 'Достарды шақыру',
+    vipHow: '7 дос шақырсаң — 7 күнге VIP аласың. Бұрын қосылған достар есептелмейді, санақ 0-ден басталады. 7 күн біткен соң қайтадан 7 дос шақырып, тағы 7 күн ала аласың. Дос сілтемемен ботқа бірінші рет кіріп, «Бастау» басқанда ғана есептеледі.',
+    vp1: 'Ойынды қарағанда чатқа жазу', vp1d: 'Басқалардың ойынын қарап отырып чатты көресіз және жаза аласыз. VIP-сіз көрермендер чатты аша алмайды.',
+    vp2: 'Барлық тас түрлері', vp2d: 'Дүкендегі барлық тастар VIP мерзімі бойы ашық.',
+    vp3: 'Профильде VIP белгісі', vp3d: 'Ойында және профильде атыңыздың жанында 👑 белгісі тұрады.',
+    vp4: 'Таңдауыңыз қарсыласқа көрінеді', vp4d: 'Ойында сіз таңдаған тас қарсыластарыңызға көрінеді.' },
+  uz: { vipLocked: 'Ludo VIP', vipLockedP: '7 do‘stingni taklif qil — 7 kunga VIP ol', vipActive: 'VIP faol', vipActiveP: 'Barcha imkoniyatlar ochiq. Profilingizda 👑 belgisi ko‘rinadi.',
+    vipProg: 'Taklif qilindi: {n} / {m}', vipLeft: 'Qoldi: {t}', vipFmtD: '{d} kun {h} soat', vipFmtH: '{h} soat {m} daq',
+    vipInvite: 'Do‘stlarni taklif qilish',
+    vipHow: '7 do‘st taklif qilsang — 7 kunga VIP olasan. Avval qo‘shilgan do‘stlar hisobga olinmaydi, hisob 0 dan boshlanadi. 7 kun tugagach, yana 7 do‘st taklif qilib, yana 7 kun olishing mumkin. Do‘st havola orqali botga birinchi marta kirib, «Start» bossagina hisoblanadi.',
+    vp1: 'O‘yin ko‘rganda chatga yozish', vp1d: 'Boshqalarning o‘yinini ko‘rib turib chatni ko‘rasiz va yoza olasiz. VIP bo‘lmagan tomoshabinlar chatni ocha olmaydi.',
+    vp2: 'Barcha tosh turlari', vp2d: 'Do‘kondagi barcha toshlar VIP muddati davomida ochiq.',
+    vp3: 'Profilda VIP belgisi', vp3d: 'O‘yinda va profilda ismingiz yonida 👑 belgisi turadi.',
+    vp4: 'Tanlovingiz raqibga ko‘rinadi', vp4d: 'O‘yinda siz tanlagan tosh raqiblaringizga ko‘rinadi.' },
+  ru: { vipLocked: 'Ludo VIP', vipLockedP: 'Пригласи 7 друзей — получи VIP на 7 дней', vipActive: 'VIP активен', vipActiveP: 'Все возможности открыты. В профиле виден значок 👑.',
+    vipProg: 'Приглашено: {n} / {m}', vipLeft: 'Осталось: {t}', vipFmtD: '{d} д {h} ч', vipFmtH: '{h} ч {m} мин',
+    vipInvite: 'Пригласить друзей',
+    vipHow: 'Пригласи 7 друзей и получи VIP на 7 дней. Ранее добавленные друзья не учитываются, отсчёт начинается с 0. Когда 7 дней закончатся, можно снова пригласить 7 друзей и получить ещё 7 дней. Засчитывается, только если друг впервые зашёл в бота по твоей ссылке и нажал «Старт».',
+    vp1: 'Писать в чат при просмотре игры', vp1d: 'Вы видите чат и пишете в него при просмотре игры. Зрители без VIP не могут открыть чат.',
+    vp2: 'Все виды фишек', vp2d: 'Все фишки из магазина доступны на срок VIP.',
+    vp3: 'Значок VIP в профиле', vp3d: 'В игре и в профиле рядом с именем стоит значок 👑.',
+    vp4: 'Ваш выбор виден сопернику', vp4d: 'Выбранные вами фишки видны соперникам в игре.' }
+};
+Object.keys(EXTRA4).forEach(l => Object.assign(I18N[l], EXTRA4[l]));
 const pickLang = c => { c = String(c || '').slice(0, 2).toLowerCase(); return I18N[c] ? c : null; };
 let lang = pickLang(localStorage.getItem('ludo_lang')) || pickLang(qs.get('lang')) ||
   pickLang(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.language_code) || 'kk';
@@ -931,6 +958,7 @@ S.info = null; S.catalog = []; S.finFor = null;
 function applyMe(info) {
   if (!info) return;
   S.info = info;
+  info.endAt = info.vip && info.left ? Date.now() + info.left : 0;
   showStats(info.wins, info.games);
   const ring = $('meRing');
   if (ring) ring.classList.toggle('novip', !info.vip);
@@ -942,18 +970,32 @@ function applyMe(info) {
 /* ---------- VIP ---------- */
 function refLink() {
   const id = S.me ? S.me.id : '';
-  return S.app ? `https://t.me/${S.bot}/${S.app}?startapp=ref_${id}` : `https://t.me/${S.bot}?startapp=ref_${id}`;
+  return `https://t.me/${S.bot}?start=ref_${id}`;   // дос боттың жеке чатына түсіп «Бастау» басады
+}
+function fmtLeft(ms) {
+  const m = Math.max(0, Math.floor(ms / 60000)), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+  return d > 0 ? t('vipFmtD').replace('{d}', d).replace('{h}', h) : t('vipFmtH').replace('{h}', h).replace('{m}', m % 60);
 }
 function renderVip() {
   const info = S.info || { vip: false, refs: 0, need: 7 };
+  const need = info.need || 7;
   $('vipCard').classList.toggle('on', Boolean(info.vip));
-  $('vipH').textContent = info.vip ? '👑 ' + t('vipActive') : t('vipLocked');
+  $('vipH').textContent = '👑 ' + t('vipActive');
   $('vipP').textContent = info.vip ? t('vipActiveP') : t('vipLockedP');
-  $('vipBar').innerHTML = Array.from({ length: info.need || 7 }, (_, i) => `<i class="${i < info.refs ? 'on' : ''}"></i>`).join('');
-  $('vipCnt').textContent = t('vipProg').replace('{n}', Math.min(info.refs, info.need || 7)).replace('{m}', info.need || 7);
-  const perks = [['👁', 'vp1'], ['💬', 'vp2'], ['🎲', 'vp3'], ['👑', 'vp4']];
+  $('vipBar').innerHTML = Array.from({ length: need }, (_, i) => `<i class="${i < info.refs ? 'on' : ''}"></i>`).join('');
+  $('vipCnt').textContent = info.vip
+    ? t('vipLeft').replace('{t}', fmtLeft((info.endAt || 0) - Date.now()))
+    : t('vipProg').replace('{n}', Math.min(info.refs, need)).replace('{m}', need);
+  const perks = [['💬', 'vp1'], ['🎲', 'vp2'], ['👑', 'vp3'], ['👁', 'vp4']];
   $('vipPerks').innerHTML = perks.map(p => `<li><i>${p[0]}</i><div><b>${t(p[1])}</b><span>${t(p[1] + 'd')}</span></div></li>`).join('');
 }
+// VIP мерзімі біткенде экранды жаңартамыз
+setInterval(() => {
+  const i = S.info;
+  if (!i || !i.vip) return;
+  if (i.endAt && Date.now() >= i.endAt) { i.vip = false; i.refs = 0; applyMe(i); send({ t: 'me_get' }); }
+  else if (S.screen === 'vip') renderVip();
+}, 15000);
 $('btnVipInv').onclick = () => {
   if (!S.bot || S.bot === 'YOUR_BOT_USERNAME') return toast(t('noBot'));
   const url = 'https://t.me/share/url?url=' + encodeURIComponent(refLink()) + '&text=' + encodeURIComponent(t('refText'));
