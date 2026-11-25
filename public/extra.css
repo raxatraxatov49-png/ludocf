@@ -153,3 +153,8 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 
 /* ойын тақтасы: жоғарғы профиль тақтаға төменгі профильдей жақын тұрсын */
 #game .bar.top{margin-bottom:calc(3px - min(100vw - 16px, 520px) * .0556)}
+
+/* ойыншылар бөлімі: тақырып қозғалмайды, тек тізімнің өзі (көп болса) төмен қарай айналады */
+#players{overflow:hidden;padding-bottom:calc(78px + max(12px,env(safe-area-inset-bottom)))}
+#players .sbar,#players .dndhint,#players .dndnote{flex:none}
+#players .plscroll{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:6px}
