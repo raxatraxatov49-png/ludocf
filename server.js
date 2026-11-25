@@ -546,6 +546,7 @@ function finish(g, color, reason) {
   g.phase = 'over';
   g.deadline = Date.now();
   broadcastGame(g);
+  postGroupResults(g);
 }
 
 function leaveGame(u) {
@@ -953,24 +954,6 @@ const parsePay = (payload, fromId) => {
 
 const GROUP_BTN = { kk: '👥 Группада ойнау', ru: '👥 Играть в группе', uz: '👥 Guruhda o‘ynash' };
 
-// Бот топқа қосылғанда сәлемдесу хабарламасы
-async function onBotAdded(mc) {
-  const chat = mc && mc.chat;
-  if (!chat || (chat.type !== 'group' && chat.type !== 'supergroup')) return;
-  const was = mc.old_chat_member && mc.old_chat_member.status, now = mc.new_chat_member && mc.new_chat_member.status;
-  if (!['member', 'administrator'].includes(now) || !['left', 'kicked', undefined].includes(was)) return;
-  const me = BOT_USERNAME || 'ludomilliybot';
-  await tgApi('sendMessage', {
-    chat_id: chat.id, parse_mode: 'HTML',
-    text: '🎲 <b>Сәлем, достар!</b>\n\n'
-      + `Мен — @${esc(me)}, топта бірге Лудо ойнауға арналған ботпын!\n\n`
-      + 'Ойынды бастау үшін:\n\n'
-      + '🎮 /play — жаңа ойын ашу\n\n'
-      + 'Достарыңды жинап, ойынға қосыл да, жеңіске жет! 🏆\n\n'
-      + 'Көңілді ойын тілеймін! 🍀'
-  });
-}
-
 async function handleUpdate(update) {
   if (update && update.my_chat_member) return onBotAdded(update.my_chat_member);
   const pq = update && update.pre_checkout_query;
@@ -984,6 +967,7 @@ async function handleUpdate(update) {
   if (update && update.callback_query) {
     const d = String(update.callback_query.data || '');
     if (d.startsWith('p:')) return lobbyCb(update.callback_query);
+    if (d.startsWith('gl:')) return groupLangCb(update.callback_query);
     return d.startsWith('l:') ? langCb(update.callback_query) : adminCb(update.callback_query);
   }
   const msg = update && update.message;
@@ -1012,13 +996,18 @@ async function handleUpdate(update) {
     await tgApi('sendMessage', { chat_id: msg.chat.id, text: TXT[lang][cmd], parse_mode: 'HTML' });
     return;
   }
+  if (cmd === 'language' && msg.chat.type !== 'private') return openGroupLang(msg);
+  if (cmd === 'reyting' || cmd === 'rating') {
+    if (msg.chat.type === 'private') { await tgApi('sendMessage', { chat_id: msg.chat.id, text: GT[lang].onlyGroup }); return; }
+    return showRating(msg.chat.id);
+  }
   if (cmd === 'language') {
     await tgApi('sendMessage', { chat_id: msg.chat.id, text: TXT[lang].langPrompt, reply_markup: langKb() });
     return;
   }
   if (cmd === 'play') {
     if (msg.chat.type === 'private') {
-      await tgApi('sendMessage', { chat_id: msg.chat.id, text: 'Бұл команда топта жұмыс істейді. Ботты топқа қосып, /play жазыңыз.' });
+      await tgApi('sendMessage', { chat_id: msg.chat.id, text: GT[lang].onlyGroup });
       return;
     }
     return openLobby(msg.chat.id, msg.from);
@@ -1043,7 +1032,9 @@ async function setupTelegram() {
     for (const code of ['uz', 'ru']) {
       await tgApi('setMyCommands', { commands: cmds(code), language_code: code });
     }
-    await tgApi('setMyCommands', { commands: [{ command: 'play', description: '🎲 Ойын бастау' }], scope: { type: 'all_group_chats' } });
+    for (const c of ['kk', 'ru', 'uz']) {   // топтағы мәзір: тек /play және /language
+      await tgApi('setMyCommands', Object.assign({ commands: groupCmds(c), scope: { type: 'all_group_chats' } }, c === 'kk' ? {} : { language_code: c }));
+    }
     const r = await tgApi('setWebhook', { url: WEBHOOK_URL, secret_token: WEBHOOK_SECRET, allowed_updates: ['message', 'pre_checkout_query', 'callback_query', 'my_chat_member'] });
     console.log('Telegram webhook:', r.description);
   } catch (e) { console.error('Telegram баптау қатесі:', e && e.message); }
@@ -1075,6 +1066,10 @@ async function loadCfg() {
     if (Array.isArray(a)) adminIds = a.map(String);
     const s = m.get('cfg:stats');
     if (s && Number.isFinite(s.games)) stats.games = s.games;
+    const gm = await dbList('g:');
+    for (const [k, v] of gm) if (v && GT[v.lang]) groupLang.set(k.slice(2), v.lang);
+    const rm = await dbList('r:');
+    for (const [k, v] of rm) if (v && typeof v === 'object') ratings.set(k.slice(2), v);
   } catch (e) { console.error('cfg load:', e && e.message); }
 }
 
@@ -1348,13 +1343,66 @@ async function runBroadcast(adminChat, fromChat, mid) {
   await showMenu(adminChat, adminChat, null, `✅ Хабарлама жіберілді.\n\n📬 Жеткізілді: <b>${ok}</b>\n⚠️ Жеткізілмеді: <b>${fail}</b> (ботты бұғаттағандар т.б.)`);
 }
 
-/* ================= Топтағы /play: тіркеу және бастау =================
-   Осы блокты server.js ішінде runBroadcast функциясынан кейін,
-   `const server = http.createServer(...)` жолынан БҰРЫН қойыңыз. */
+/* ================= Топ: /play, /language, нәтижелер ================= */
 
-const LOBBY_TTL = 10 * 60 * 1000;                 // тіркеу 10 минут тұрады
-const lobbies = new Map();                        // chatId -> { host, players:[{id,name}], mid, timer }
-const COLOR_DOT = ['🔴', '🟢', '🟡', '🔵'];        // ludo.js ішіндегі түс реті (0,1,2,3). Керек болса ауыстырыңыз
+const LOBBY_TTL = 2 * 60 * 1000;                  // 2 минутта ойын басталмаса, тіркеу жабылып хабарлама өшеді
+const lobbies = new Map();                        // chatId -> { chat, host, players:[{id,name}], mid, timer }
+const COLOR_DOT = ['🔴', '🟢', '🟡', '🔵'];        // ludo.js ішіндегі түс реті (0,1,2,3)
+const MEDALS = ['🥇', '🥈', '🥉', '4️⃣'];
+const groupLang = new Map();                      // chatId -> 'kk' | 'ru' | 'uz'
+
+const GT = {
+  kk: {
+    welcome: me => `🎲 <b>Сәлем, достар!</b>\n\nМен — @${me}, топта бірге Лудо ойнауға арналған ботпын!\n\nОйынды бастау үшін:\n\n🎮 /play — жаңа ойын ашу\n\nДостарыңды жинап, ойынға қосыл да, жеңіске жет! 🏆\n\nКөңілді ойын тілеймін! 🍀\n\nТіл: /language\nРейтинг: /reyting`,
+    title: '🎲 <b>Тіркеу жүріп жатыр</b>',
+    hint: (m, max) => `<i>${max} ойыншы жиналса ойын өзі басталады. Бұрын бастау үшін ${m} «Бастау» батырмасын басады.</i>`,
+    join: '🎲 Қосылу', start: '▶️ Бастау', joined: 'Қосылдыңыз ✅', already: 'Сіз тіркелгенсіз ✅', inOther: 'Сіз қазір басқа ойында тұрсыз',
+    full: 'Орын қалмады', notHost: 'Ойынды тек тіркеуді ашқан адам бастай алады', need2: 'Кемінде 2 ойыншы керек', gone: 'Бұл тіркеу аяқталған',
+    inGame: m => `ℹ️ ${m}, сіз қазір ойында тұрсыз.`,
+    expired: '⌛ Тіркеу уақыты аяқталды. Қайта бастау: /play',
+    noStart: '⚠️ Ойын басталмады: ойыншы жеткіліксіз. Қайта бастау: /play',
+    started: '🎮 <b>Ойын басталды!</b>', enterHint: '👇 Ойынға кіріңіз!', enter: '🎲 Ойынға кіру',
+    result: '🏆 <b>Ойын аяқталды! Нәтижелер:</b>',
+    onlyGroup: 'Бұл команда топта жұмыс істейді. Ботты топқа қосып, /play жазыңыз.',
+    langPrompt: '🌐 Топ тілін таңдаңыз:', langSet: '✅ Топ тілі қойылды: Қазақша', onlyAdmins: '🚫 Тілді тек топ админдері өзгерте алады.',
+    ratingTitle: '🏆 <b>Топ рейтингі — ТОП 10</b>', ratingEmpty: 'Рейтинг әзірге бос. Ойнап, ұпай жина: /play', pts: 'ұпай',
+    cmdPlay: 'Ойын бастау', cmdLang: 'Тілді өзгерту', cmdRating: 'Топ рейтингі'
+  },
+  ru: {
+    welcome: me => `🎲 <b>Привет, друзья!</b>\n\nЯ — @${me}, бот для игры в Лудо в группе!\n\nЧтобы начать игру:\n\n🎮 /play — открыть новую игру\n\nСоберите друзей, присоединяйтесь к игре и добейтесь победы! 🏆\n\nПриятной игры! 🍀\n\nЯзык: /language\nРейтинг: /reyting`,
+    title: '🎲 <b>Идёт регистрация</b>',
+    hint: (m, max) => `<i>Когда соберутся ${max} игрока, игра начнётся сама. Чтобы начать раньше, ${m} нажимает «Начать».</i>`,
+    join: '🎲 Присоединиться', start: '▶️ Начать', joined: 'Вы присоединились ✅', already: 'Вы уже зарегистрированы ✅', inOther: 'Вы сейчас в другой игре',
+    full: 'Мест нет', notHost: 'Начать игру может только тот, кто открыл регистрацию', need2: 'Нужно минимум 2 игрока', gone: 'Эта регистрация завершена',
+    inGame: m => `ℹ️ ${m}, вы уже в игре.`,
+    expired: '⌛ Время регистрации истекло. Начать заново: /play',
+    noStart: '⚠️ Игра не началась: недостаточно игроков. Начать заново: /play',
+    started: '🎮 <b>Игра началась!</b>', enterHint: '👇 Заходите в игру!', enter: '🎲 Войти в игру',
+    result: '🏆 <b>Игра окончена! Результаты:</b>',
+    onlyGroup: 'Эта команда работает в группе. Добавьте бота в группу и напишите /play.',
+    langPrompt: '🌐 Выберите язык группы:', langSet: '✅ Язык группы установлен: Русский', onlyAdmins: '🚫 Язык могут менять только админы группы.',
+    ratingTitle: '🏆 <b>Рейтинг группы — ТОП 10</b>', ratingEmpty: 'Рейтинг пока пуст. Играй и набирай очки: /play', pts: 'очк.',
+    cmdPlay: 'Начать игру', cmdLang: 'Сменить язык', cmdRating: 'Рейтинг группы'
+  },
+  uz: {
+    welcome: me => `🎲 <b>Salom, do‘stlar!</b>\n\nMen — @${me}, guruhda birga Ludo o‘ynash uchun botman!\n\nO‘yinni boshlash uchun:\n\n🎮 /play — yangi o‘yin ochish\n\nDo‘stlaringni yig‘ib, o‘yinga qo‘shil va g‘alaba qozon! 🏆\n\nOmad tilayman! 🍀\n\nTil: /language\nReyting: /reyting`,
+    title: '🎲 <b>Ro‘yxatdan o‘tish davom etmoqda</b>',
+    hint: (m, max) => `<i>${max} o‘yinchi yig‘ilsa, o‘yin o‘zi boshlanadi. Oldinroq boshlash uchun ${m} «Boshlash» tugmasini bosadi.</i>`,
+    join: '🎲 Qo‘shilish', start: '▶️ Boshlash', joined: 'Qo‘shildingiz ✅', already: 'Siz ro‘yxatdasiz ✅', inOther: 'Siz hozir boshqa o‘yindasiz',
+    full: 'Joy qolmadi', notHost: 'O‘yinni faqat ro‘yxatni ochgan kishi boshlay oladi', need2: 'Kamida 2 o‘yinchi kerak', gone: 'Bu ro‘yxat yakunlangan',
+    inGame: m => `ℹ️ ${m}, siz hozir o‘yindasiz.`,
+    expired: '⌛ Ro‘yxat vaqti tugadi. Qayta boshlash: /play',
+    noStart: '⚠️ O‘yin boshlanmadi: o‘yinchi yetarli emas. Qayta boshlash: /play',
+    started: '🎮 <b>O‘yin boshlandi!</b>', enterHint: '👇 O‘yinga kiring!', enter: '🎲 O‘yinga kirish',
+    result: '🏆 <b>O‘yin tugadi! Natijalar:</b>',
+    onlyGroup: 'Bu buyruq guruhda ishlaydi. Botni guruhga qo‘shib, /play deb yozing.',
+    langPrompt: '🌐 Guruh tilini tanlang:', langSet: '✅ Guruh tili o‘rnatildi: O‘zbekcha', onlyAdmins: '🚫 Tilni faqat guruh adminlari o‘zgartira oladi.',
+    ratingTitle: '🏆 <b>Guruh reytingi — TOP 10</b>', ratingEmpty: 'Reyting hozircha bo‘sh. O‘ynab, ball to‘pla: /play', pts: 'ball',
+    cmdPlay: 'O‘yin boshlash', cmdLang: 'Tilni o‘zgartirish', cmdRating: 'Guruh reytingi'
+  }
+};
+const T = chat => GT[groupLang.get(String(chat))] || GT.kk;
+const groupCmds = c => [{ command: 'play', description: GT[c].cmdPlay }, { command: 'reyting', description: GT[c].cmdRating }, { command: 'language', description: GT[c].cmdLang }];
 
 const mention = p => `<a href="tg://user?id=${p.id}">${esc(p.name)}</a>`;
 const nameOf = f => ([f.first_name, f.last_name].filter(Boolean).join(' ') || f.username || 'Player').slice(0, 40);
@@ -1362,20 +1410,60 @@ const gameLink = () => BOT_USERNAME
   ? `https://t.me/${BOT_USERNAME}${MINI_APP_SHORT ? '/' + MINI_APP_SHORT : ''}?startapp=play`
   : MINI_APP_URL;
 
-function lobbyText(l) {
-  const host = l.players.find(p => p.id === l.host) || l.players[0];
-  return '🎲 <b>Тіркеу жүріп жатыр</b>\n\n'
-    + l.players.map((p, i) => `${i + 1}. ${mention(p)}`).join('\n')
-    + `\n\n👥 ${l.players.length}/${MAX_PLAYERS}`
-    + `\n<i>${MAX_PLAYERS} ойыншы жиналса ойын өзі басталады. Бұрын бастау үшін ${mention(host)} «Бастау» батырмасын басады.</i>`;
+/* ---- Бот топқа қосылғанда ---- */
+async function onBotAdded(mc) {
+  const chat = mc && mc.chat;
+  if (!chat || (chat.type !== 'group' && chat.type !== 'supergroup')) return;
+  const was = mc.old_chat_member && mc.old_chat_member.status, now = mc.new_chat_member && mc.new_chat_member.status;
+  if (!['member', 'administrator'].includes(now) || !['left', 'kicked', undefined].includes(was)) return;
+  await tgApi('sendMessage', { chat_id: chat.id, parse_mode: 'HTML', text: T(chat.id).welcome(esc(BOT_USERNAME || 'ludomilliybot')) });
 }
-const lobbyKb = () => ({ inline_keyboard: [[
-  { text: '🎲 Қосылу', callback_data: 'p:j' },
-  { text: '▶️ Бастау', callback_data: 'p:s' }
+
+/* ---- /language: топ тілін тек топ админдері өзгертеді ---- */
+async function isGroupAdmin(chat, uid) {
+  const r = await tgApi('getChatMember', { chat_id: chat, user_id: uid }).catch(() => null);
+  return Boolean(r && r.ok && r.result && ['creator', 'administrator'].includes(r.result.status));
+}
+
+async function openGroupLang(msg) {
+  const chat = msg.chat.id, t = T(chat);
+  const anon = msg.sender_chat && String(msg.sender_chat.id) === String(chat);   // жасырын админ
+  if (!(anon || await isGroupAdmin(chat, msg.from.id))) {
+    await tgApi('sendMessage', { chat_id: chat, text: t.onlyAdmins });
+    return;
+  }
+  await tgApi('sendMessage', { chat_id: chat, text: t.langPrompt, reply_markup: { inline_keyboard: LANGS.map(([c, n]) => [{ text: n, callback_data: 'gl:' + c }]) } });
+}
+
+async function groupLangCb(cb) {
+  const chat = cb.message && cb.message.chat && cb.message.chat.id;
+  const code = String(cb.data || '').slice(3);
+  const answer = (text, alert) => tgApi('answerCallbackQuery', { callback_query_id: cb.id, text, show_alert: Boolean(alert) }).catch(() => {});
+  if (!chat || !GT[code]) return answer();
+  if (!(await isGroupAdmin(chat, cb.from.id))) return answer(T(chat).onlyAdmins, true);
+  await answer();
+  groupLang.set(String(chat), code);
+  dbPut('g:' + chat, { lang: code });
+  tgApi('deleteMessage', { chat_id: chat, message_id: cb.message.message_id }).catch(() => {});
+  tgApi('sendMessage', { chat_id: chat, text: GT[code].langSet }).catch(() => {});
+  tgApi('setMyCommands', { commands: groupCmds(code), scope: { type: 'chat', chat_id: chat } }).catch(() => {});
+}
+
+/* ---- Тіркеу ---- */
+function lobbyText(l) {
+  const t = T(l.chat);
+  const host = l.players.find(p => p.id === l.host) || l.players[0];
+  return t.title + '\n\n'
+    + l.players.map((p, i) => `${i + 1}. ${mention(p)}`).join('\n')
+    + `\n\n👥 ${l.players.length}/${MAX_PLAYERS}\n` + t.hint(mention(host), MAX_PLAYERS);
+}
+const lobbyKb = chat => ({ inline_keyboard: [[
+  { text: T(chat).join, callback_data: 'p:j' },
+  { text: T(chat).start, callback_data: 'p:s' }
 ]] });
 
-async function postLobby(chat, l) {
-  const r = await tgApi('sendMessage', { chat_id: chat, text: lobbyText(l), parse_mode: 'HTML', reply_markup: lobbyKb() });
+async function postLobby(l) {
+  const r = await tgApi('sendMessage', { chat_id: l.chat, text: lobbyText(l), parse_mode: 'HTML', reply_markup: lobbyKb(l.chat) });
   if (r && r.ok && r.result) l.mid = r.result.message_id;
   else console.error('lobby send:', r && r.description);
   return r;
@@ -1383,33 +1471,45 @@ async function postLobby(chat, l) {
 
 // /play — топта тіркеу ашады (тіркеу бар болса, оны чаттың төменіне қайта шығарады)
 async function openLobby(chat, from) {
-  const id = String(from.id);
+  const id = String(from.id), t = T(chat);
   const bu = touchBotUser(from);
   if (bu && bu.blocked && !isAdmin(id)) return;
   if (activeGame(users.get(id))) {
-    await tgApi('sendMessage', { chat_id: chat, text: `ℹ️ ${mention({ id, name: nameOf(from) })}, сіз қазір ойында тұрсыз.`, parse_mode: 'HTML' });
+    await tgApi('sendMessage', { chat_id: chat, text: t.inGame(mention({ id, name: nameOf(from) })), parse_mode: 'HTML' });
+    return;
+  }
+  if (inOtherLobby(id, chat)) {
+    await tgApi('sendMessage', { chat_id: chat, text: t.inGame(mention({ id, name: nameOf(from) })), parse_mode: 'HTML' });
     return;
   }
   let l = lobbies.get(chat);
   if (l) {
-    clearTimeout(l.timer);
-    tgApi('deleteMessage', { chat_id: chat, message_id: l.mid }).catch(() => {});
+    tgApi('deleteMessage', { chat_id: chat, message_id: l.mid }).catch(() => {});   // таймер қайта қосылмайды: 2 минут тіркеу ашылған сәттен санайды
   } else {
-    l = { host: id, players: [{ id, name: nameOf(from) }], mid: 0, timer: null };
+    l = { chat, host: id, players: [{ id, name: nameOf(from) }], mid: 0, timer: null };
+    l.timer = setTimeout(() => expireLobby(l), LOBBY_TTL);
     lobbies.set(chat, l);
   }
-  l.timer = setTimeout(() => expireLobby(chat, l), LOBBY_TTL);
-  await postLobby(chat, l);
+  await postLobby(l);
 }
 
-function expireLobby(chat, l) {
-  if (lobbies.get(chat) !== l) return;
-  lobbies.delete(chat);
-  tgApi('editMessageText', { chat_id: chat, message_id: l.mid, text: '⌛ Тіркеу уақыты аяқталды. Қайта бастау: /play' }).catch(() => {});
+function expireLobby(l) {
+  if (lobbies.get(l.chat) !== l) return;
+  lobbies.delete(l.chat);
+  // тіркеу хабарламасы өшіріледі (өшпесе, орнына «уақыт аяқталды» деп жазылады)
+  tgApi('deleteMessage', { chat_id: l.chat, message_id: l.mid })
+    .then(r => { if (!r || !r.ok) return tgApi('editMessageText', { chat_id: l.chat, message_id: l.mid, text: T(l.chat).expired }); })
+    .catch(() => {});
+}
+
+// Ойыншы басқа топтың тіркеуінде тұр ма
+function inOtherLobby(id, chat) {
+  for (const l of lobbies.values()) if (l.chat !== chat && l.players.some(p => p.id === id)) return true;
+  return false;
 }
 
 async function launchLobby(chat) {
-  const l = lobbies.get(chat);
+  const l = lobbies.get(chat), t = T(chat);
   if (!l) return;
   lobbies.delete(chat);                                   // қайталап басылмауы үшін бірден өшіреміз
   clearTimeout(l.timer);
@@ -1425,42 +1525,82 @@ async function launchLobby(chat) {
   }
   const g = startGame(list);
   if (!g) {
-    await tgApi('sendMessage', { chat_id: chat, text: '⚠️ Ойын басталмады: ойыншы жеткіліксіз. Қайта бастау: /play' });
+    await tgApi('sendMessage', { chat_id: chat, text: t.noStart });
     return;
   }
+  g.groupChat = chat;                                     // ойын біткенде нәтиже осы топқа жарияланады
   const lines = g.seats.map(s => `${COLOR_DOT[s.color] || '⚪'} ${mention({ id: s.uid, name: s.name })}`);
   await tgApi('sendMessage', {
     chat_id: chat, parse_mode: 'HTML',
-    text: '🎮 <b>Ойын басталды!</b>\n\n' + lines.join('\n') + '\n\n👇 Ойынға кіріңіз!',
-    reply_markup: { inline_keyboard: [[{ text: '🎲 Ойынға кіру', url: gameLink() }]] }
+    text: t.started + '\n\n' + lines.join('\n') + '\n\n' + t.enterHint,
+    reply_markup: { inline_keyboard: [[{ text: t.enter, url: gameLink() }]] }
   });
 }
 
 async function lobbyCb(cb) {
-  const chat = cb.message && cb.message.chat && cb.message.chat.id;
+  const chat = cb.message && cb.message.chat && cb.message.chat.id, t = T(chat);
   const answer = (text, alert) => tgApi('answerCallbackQuery', { callback_query_id: cb.id, text, show_alert: Boolean(alert) }).catch(() => {});
   const l = chat && lobbies.get(chat);
-  if (!l || l.mid !== cb.message.message_id) return answer('Бұл тіркеу аяқталған', true);
+  if (!l || l.mid !== cb.message.message_id) return answer(t.gone, true);
   const from = cb.from, id = String(from.id);
   const bu = touchBotUser(from);
   if (bu && bu.blocked && !isAdmin(id)) return answer();
 
   if (cb.data === 'p:j') {
-    if (l.players.some(p => p.id === id)) return answer('Сіз тіркелгенсіз ✅');
-    if (activeGame(users.get(id))) return answer('Сіз қазір басқа ойында тұрсыз', true);
-    if (l.players.length >= MAX_PLAYERS) return answer('Орын қалмады', true);
+    if (l.players.some(p => p.id === id)) return answer(t.already);
+    if (activeGame(users.get(id)) || inOtherLobby(id, chat)) return answer(t.inOther, true);   // ойын біткенше немесе өзі шыққанша басқа ойынға қосыла алмайды
+    if (l.players.length >= MAX_PLAYERS) return answer(t.full, true);
     l.players.push({ id, name: nameOf(from) });
-    await answer('Қосылдыңыз ✅');
+    await answer(t.joined);
     if (l.players.length >= MAX_PLAYERS) return launchLobby(chat);   // 4 адам болса бірден басталады
-    return tgApi('editMessageText', { chat_id: chat, message_id: l.mid, text: lobbyText(l), parse_mode: 'HTML', reply_markup: lobbyKb() }).catch(() => {});
+    return tgApi('editMessageText', { chat_id: chat, message_id: l.mid, text: lobbyText(l), parse_mode: 'HTML', reply_markup: lobbyKb(chat) }).catch(() => {});
   }
   if (cb.data === 'p:s') {
-    if (id !== l.host) return answer('Ойынды тек тіркеуді ашқан адам бастай алады', true);
-    if (l.players.length < 2) return answer('Кемінде 2 ойыншы керек', true);
+    if (id !== l.host) return answer(t.notHost, true);
+    if (l.players.length < 2) return answer(t.need2, true);
     await answer();
     return launchLobby(chat);
   }
   return answer();
+}
+
+/* ---- Топ рейтингі: 1-орын +20, 2-орын +10, 3-орын +5, шығып кеткен/4-орын 0 ---- */
+const PLACE_PTS = [20, 10, 5, 0];
+const ratings = new Map();                        // chatId -> { userId: { n: аты, p: ұпай } }
+
+function awardPoints(g) {
+  const key = String(g.groupChat);
+  const r = ratings.get(key) || {};
+  for (const s of g.seats) {
+    if (s.place == null) continue;                // ойыннан шығып кетсе ұпай берілмейді
+    const pts = PLACE_PTS[s.place - 1] || 0;
+    const e = r[s.uid] || { n: s.name, p: 0 };
+    e.n = s.name; e.p += pts;
+    r[s.uid] = e;
+  }
+  ratings.set(key, r);
+  dbPut('r:' + key, r);
+}
+
+async function showRating(chat) {
+  const t = T(chat);
+  const r = ratings.get(String(chat)) || {};
+  const top = Object.entries(r).filter(([, e]) => e.p > 0).sort((a, b) => b[1].p - a[1].p).slice(0, 10);
+  if (!top.length) return tgApi('sendMessage', { chat_id: chat, text: t.ratingEmpty });
+  const lines = top.map(([id, e], i) => `${MEDALS[i] && i < 3 ? MEDALS[i] : (i + 1) + '.'} ${mention({ id, name: e.n })} — <b>${e.p}</b> ${t.pts}`);
+  return tgApi('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: t.ratingTitle + '\n\n' + lines.join('\n') });
+}
+
+/* ---- Ойын біткенде топқа нәтиже: 🥇🥈🥉4️⃣, шығып кеткендерге ❌ (ұпайсыз) ---- */
+function postGroupResults(g) {
+  if (!g.groupChat || g.posted) return;
+  g.posted = true;
+  try { awardPoints(g); } catch (e) { console.error('rating:', e && e.message); }
+  const who = s => mention({ id: s.uid, name: s.name });
+  const placed = g.seats.filter(s => s.place != null).sort((a, b) => a.place - b.place);
+  const out = g.seats.filter(s => s.place == null);
+  const lines = placed.map(s => `${MEDALS[s.place - 1] || '🏅'} ${who(s)}`).concat(out.map(s => `❌ ${who(s)}`));
+  tgApi('sendMessage', { chat_id: g.groupChat, parse_mode: 'HTML', text: T(g.groupChat).result + '\n\n' + lines.join('\n') }).catch(() => {});
 }
 
 const server = http.createServer(async (req, res) => {
