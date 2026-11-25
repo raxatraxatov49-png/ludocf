@@ -165,8 +165,55 @@ function applyI18n() {
 }
 
 
-/* дыбыстар өшірілген */
-const SFX = { unlock() {}, roll() {}, step() {}, star() {}, capture() {} };
+/* ---------- Дыбыстар (Web Audio, файл керек емес) ---------- */
+const SFX = (() => {
+  let ctx = null, NB = null, master = null;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function ready() {
+    try {
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        ctx = new AC();
+        master = ctx.createGain(); master.gain.value = 0.7; master.connect(ctx.destination);
+        NB = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
+        const d = NB.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      return true;
+    } catch (e) { return false; }
+  }
+  function click(t, f, q, dur, v) {
+    const s = ctx.createBufferSource(); s.buffer = NB;
+    const b = ctx.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = f; b.Q.value = q;
+    const g = ctx.createGain(); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    s.connect(b); b.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.02);
+  }
+  function tone(t, type, f1, f2, dur, v) {
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f1, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.005); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  const play = fn => { if (ready()) { try { fn(ctx.currentTime + 0.02); } catch (e) {} } };
+  return {
+    unlock() { ready(); },
+    /* кубик: жоғары өрлейтін тиктер + соңында «поп» */
+    roll() { play(t => {
+      for (let i = 0; i < 7; i++) { tone(t + i * 0.055, 'triangle', 600 + i * 120, 0, 0.05, 0.35); click(t + i * 0.055, 3500, 5, 0.02, 0.3); }
+      tone(t + 0.42, 'sine', 900, 450, 0.15, 0.5);
+    }); },
+    /* тас жүргенде: жұмсақ поп */
+    step() { play(t => { tone(t, 'sine', 700, 350, 0.1, 0.5); }); },
+    /* жұлдызға тұрғанда: қоңырау */
+    star() { play(t => { tone(t, 'sine', 988, 0, 0.6, 0.3); tone(t + 0.12, 'sine', 1319, 0, 0.8, 0.3); tone(t + 0.12, 'sine', 2638, 0, 0.3, 0.06); }); },
+    /* тас жегенде: төмен түсетін қапа дыбыс */
+    capture() { play(t => { tone(t, 'triangle', 440, 330, 0.2, 0.4); tone(t + 0.2, 'triangle', 330, 200, 0.4, 0.4); }); }
+  };
+})();
+/* браузер дыбысты тек бірінші басқаннан кейін ашады */
+['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, () => SFX.unlock(), { once: true, passive: true }));
 
 /* ---------- Күй ---------- */
 const S = { players: null, playersAt: 0, dnd: false, inv: null, ws: null, me: null, bot: '', room: null, queue: null, queueEnd: 0, game: null, gameEnd: 0, rollSeq: -1, lastTurnMine: false, noReconnect: false, dieBusy: {}, moveSeq: null, animating: false, latest: null, chat: [], unread: 0, app: '' };
