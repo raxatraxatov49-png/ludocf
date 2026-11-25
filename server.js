@@ -44,8 +44,13 @@ function rand6() {
   for (;;) { globalThis.crypto.getRandomValues(b); if (b[0] < 4294967292) return 1 + (b[0] % 6); }   // 2^32 дейін біркелкі бөлу
 }
 
+const VIP_REFS = 7;                                  // VIP алу үшін шақырылатын дос саны
+const VIP_DAYS = 7;                                  // VIP неше күнге беріледі
+const VIP_MS = VIP_DAYS * 24 * 60 * 60 * 1000;
+const isVip = p => Boolean(p && p.vipUntil && p.vipUntil > Date.now());
+
 const isOnline = u => Boolean(u && u.ws && u.ws.readyState === 1);
-const pub = u => { const p = profiles.get(u.id); return { id: u.id, name: u.name, avatar: u.avatar || null, vip: Boolean(p && p.vip) }; };
+const pub = u => { const p = profiles.get(u.id); return { id: u.id, name: u.name, avatar: u.avatar || null, vip: isVip(p) }; };
 const inGame = u => Boolean(u && u.game && games.has(u.game));
 
 /* ================= Профильдер (Durable Object сақтауында) ================= */
@@ -74,12 +79,11 @@ function touchProfile(u, seenNow) {
 
 /* ================= Ұпай, VIP, скиндер ================= */
 
-const VIP_REFS = 7;                                  // VIP алу үшін шақырылатын дос саны
-const ownsSkin = (p, id) => Boolean(p && SK.byId[id] && (id === 'classic' || p.vip || (p.skins || []).includes(id)));
+const ownsSkin = (p, id) => Boolean(p && SK.byId[id] && (id === 'classic' || isVip(p) || (p.skins || []).includes(id)));
 const skinOf = p => (p && ownsSkin(p, p.skin || 'classic') ? (p.skin || 'classic') : 'classic');
 
 function meInfo(p) {
-  return { t: 'me', vip: Boolean(p.vip), refs: (p.refs || []).length, need: VIP_REFS, pts: p.pts || 0,
+  return { t: 'me', vip: isVip(p), left: isVip(p) ? p.vipUntil - Date.now() : 0, refs: isVip(p) ? 0 : (p.refs || []).length, need: VIP_REFS, days: VIP_DAYS, pts: p.pts || 0,
     wins: p.wins || 0, games: p.games || 0, skin: skinOf(p), skins: p.skins || [] };
 }
 function sendMe(id) { const u = users.get(id), p = profiles.get(id); if (u && p) send(u, meInfo(p)); }
@@ -92,22 +96,34 @@ function addPoints(uid, pts) {
   sendMe(uid);
 }
 
-// Реферал: дос сілтемемен бірінші рет кірсе (профилі жаңа), шақырушыға +1. 7 дос = VIP
-function onRef(u, refId) {
-  refId = String(refId || '');
-  const p = profiles.get(u.id);
+// Реферал: дос сілтемемен ботқа бірінші рет кіріп «Бастау» басса, шақырушыға +1.
+// 7 дос = 7 күн VIP. VIP кезінде келген достар есептелмейді; мерзім біткен соң санақ 0-ден басталады.
+function creditRef(friendId, refId, name, avatar) {
+  friendId = String(friendId || ''); refId = String(refId || '');
+  if (!/^\d+$/.test(friendId) || !/^\d+$/.test(refId) || refId === friendId) return false;
   const inv = profiles.get(refId);
-  if (!p || !inv || refId === u.id || p.refBy || !p.created || Date.now() - p.created > 30 * 60 * 1000) return;
+  if (!inv) return false;
+  const now = Date.now();
+  let p = profiles.get(friendId);
+  if (!p) {   // дос ботқа алғаш рет кірді: профиль жасаймыз
+    p = { id: friendId, name: String(name || 'Player').slice(0, 40), avatar: avatar || null, seen: now, dnd: false, created: now };
+    profiles.set(friendId, p);
+    playersBaseAt = 0;
+  }
+  if (p.refBy || !p.created || now - p.created > 30 * 60 * 1000) return false;   // тек жаңа қолданушы, тек бір рет
   p.refBy = refId;
   saveProfile(p);
+  if (isVip(inv)) return true;   // VIP белсенді кезде шақыру есептелмейді
   inv.refs = inv.refs || [];
-  if (!inv.refs.includes(u.id)) inv.refs.push(u.id);
-  const justNow = !inv.vip && inv.refs.length >= VIP_REFS;
-  if (justNow) inv.vip = true;
+  if (!inv.refs.includes(friendId)) inv.refs.push(friendId);
+  let unlocked = false;
+  if (inv.refs.length >= VIP_REFS) { inv.vipUntil = now + VIP_MS; inv.refs = []; unlocked = true; }
   saveProfile(inv);
   sendMe(refId);
-  if (justNow) send(users.get(refId), { t: 'vip_unlocked' });
+  if (unlocked) send(users.get(refId), { t: 'vip_unlocked' });
+  return true;
 }
+function onRef(u, refId) { creditRef(u.id, refId, u.name, u.avatar); }
 
 function grantSkin(uid, id, charge) {
   const p = profiles.get(uid);
@@ -322,7 +338,7 @@ function startGame(list, ranked) {
   const colors = L.COLORS_FOR[list.length];
   const g = {
     id: 'g' + (++gameSeq),
-    seats: list.map((u, i) => { const p = profiles.get(u.id); return { uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, lives: 3, left: false, shown: rand6(), place: null, pts: 0, vip: Boolean(p && p.vip), skin: skinOf(p) }; }),
+    seats: list.map((u, i) => { const p = profiles.get(u.id); return { uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, lives: 3, left: false, shown: rand6(), place: null, pts: 0, vip: isVip(p), skin: skinOf(p) }; }),
     ranked: Boolean(ranked), places: [],
     tokens: L.newTokens(colors),
     turnIdx: 0, phase: 'roll', dice: null, legal: [], rollSeq: 0, rollColor: null, moveSeq: 0, chat: [], sixes: 0,
@@ -504,7 +520,7 @@ function chatMsg(u, text) {
   u.lastChat = now;
   let targets, color = null, spec = false;
   const prof = profiles.get(u.id);
-  const vip = Boolean(prof && prof.vip);
+  const vip = isVip(prof);
   const g = games.get(u.game) || games.get(u.watch);
   if (g && g.id === u.watch && g.id !== u.game) {
     // көрермен: чатты тек VIP көреді және жаза алады
@@ -524,7 +540,7 @@ function chatMsg(u, text) {
   const msg = { t: 'chat', id: u.id, name: u.name, color, text, at: now, vip, spec };
   if (g) {
     g.chat.push(msg); if (g.chat.length > 50) g.chat.shift();
-    for (const id of g.watchers) { const w = users.get(id); const wp = profiles.get(id); if (w && wp && wp.vip) targets.push(w); }   // VIP көрермендер де көреді
+    for (const id of g.watchers) { const w = users.get(id); const wp = profiles.get(id); if (w && wp && isVip(wp)) targets.push(w); }   // VIP көрермендер де көреді
   }
   targets.forEach(x => send(x, msg));
 }
@@ -664,7 +680,7 @@ function watchStart(u, playerId) {
   u.watch = g.id;
   send(u, snapshot(g, true));
   const wp = profiles.get(u.id);
-  if (wp && wp.vip) send(u, { t: 'chat_hist', list: g.chat || [] });
+  if (isVip(wp)) send(u, { t: 'chat_hist', list: g.chat || [] });
   broadcastGame(g);                        // көрермен санын жаңартамыз
 }
 
@@ -804,6 +820,13 @@ setInterval(safe(() => {
     else if (!g.emptySince) g.emptySince = now;
     if ((g.emptySince && now - g.emptySince > 60000) || (g.winner !== null && now - g.deadline > 10 * 60000)) destroyGame(g);
   }
+  for (const [id, u] of users) {
+    if (isOnline(u)) {   // VIP мерзімі біткенде клиентке жаңа күйді жібереміз
+      const v = isVip(profiles.get(id));
+      if (u.vipSeen !== undefined && u.vipSeen !== v) sendMe(id);
+      u.vipSeen = v;
+    }
+  }
   for (const [id, u] of users) if (!isOnline(u) && !inGame(u)) users.delete(id);
   for (const [k, rec] of pdecl) if (rec.until < now && now - rec.last > PDECLINE_RESET) pdecl.delete(k);   // жад ағып кетпеуі үшін
 }), 20000);
@@ -862,6 +885,7 @@ async function handleUpdate(update) {
   const param = (msg.text.split(/\s+/)[1] || '').trim();
   const room = /^room_[A-Za-z0-9]{4,8}$/.test(param) ? param.slice(5) : '';
   const ref = /^ref_\d{1,15}$/.test(param) ? param.slice(4) : '';
+  if (ref && msg.from) creditRef(msg.from.id, ref, [msg.from.first_name, msg.from.last_name].filter(Boolean).join(' ') || msg.from.username, null);
   const url = MINI_APP_URL + '/?lang=' + lang + (room ? '&room=' + room : '') + (ref ? '&ref=' + ref : '');
   await tgApi('sendMessage', {
     chat_id: msg.chat.id, text: TXT[lang].start, parse_mode: 'HTML',
