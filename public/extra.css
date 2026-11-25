@@ -136,3 +136,17 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 .dndhint,.dndnote{box-sizing:border-box;width:calc(100% - 4px)}
 #players .sbar,#players .plscroll{box-sizing:border-box;min-width:0}
 #players .pl{min-width:0;max-width:100%;box-sizing:border-box}
+
+/* ойыншылар бөлімі: үлкенірек профиль, батырма және тақырып */
+#players{padding-left:16px;padding-right:16px}
+#players .sbar h1{font-size:25px;font-weight:800}
+#players .dndbtn{height:44px;padding:0 14px;gap:8px}
+#players .dndbtn svg{width:20px;height:20px}
+#players .dndbtn .sw{width:40px;height:23px;border-radius:12px}
+#players .dndbtn .sw::after{width:19px;height:19px;top:2px;left:2px}
+#players .dndbtn[aria-checked=true] .sw::after{left:19px}
+#players .pl{gap:12px;padding:10px 12px;margin-bottom:7px;border-radius:18px}
+#players .pl .ava{width:42px;height:42px}
+#players .pl .nm b{font-size:16px;font-weight:800}
+#players .pl .st{font-size:13px}
+#players .pb{padding:8px 14px;font-size:14.5px;font-weight:800;border-radius:14px;line-height:1.2}
