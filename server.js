@@ -17,8 +17,17 @@ const SEARCH_MS = 20000;   // кездейсоқ ойынға ойыншы жи�
 const TURN_MS = 25000;     // бір әрекетке берілетін уақыт
 const AUTO_MS = 1200;      // автоматты ойыншының кідірісі
 const ROOM_TTL = 30 * 60 * 1000;
+const PINVITE_TTL = 30 * 1000;        // шақыру қанша секунд тұрады
+const PDECLINE_LIMIT = 2;             // осынша рет қабылдамаса...
+const PDECLINE_COOL = 2 * 60 * 1000;  // ...2 минут қайта шақыра алмайды
+const PDECLINE_RESET = 10 * 60 * 1000;
+const PLAYERS_LIMIT = 100;
+const WATCH_LIMIT = 100;
 
-const users = new Map();      // id -> { id, name, avatar, ws, game }
+const users = new Map();      // id -> { id, name, avatar, ws, game, watch }
+const profiles = new Map();   // id -> { id, name, avatar, seen, dnd }  (бот ойыншыларының бәрі, офлайн да)
+const pinvites = new Map();   // 'from>to' -> { from, to, timer }
+const pdecl = new Map();      // 'from>to' -> { count, until, last }
 const games = new Map();
 const rooms = new Map();      // code -> { code, host, members:[id], at }
 const userRoom = new Map();   // userId -> code
@@ -30,6 +39,30 @@ let gameSeq = 0;
 const isOnline = u => Boolean(u && u.ws && u.ws.readyState === 1);
 const pub = u => ({ id: u.id, name: u.name, avatar: u.avatar || null });
 const inGame = u => Boolean(u && u.game && games.has(u.game));
+
+/* ================= Профильдер (Durable Object сақтауында) ================= */
+
+const CF = globalThis.__CF || {};
+function saveProfile(p) {
+  try { if (CF.putNow) Promise.resolve(CF.putNow('p:' + p.id, p)).catch(() => {}); } catch (e) { /* сақтау қатесі ойынды тоқтатпайды */ }
+}
+async function loadProfiles() {
+  try {
+    if (!CF.listNow) return;
+    const m = await CF.listNow('p:');
+    for (const [, p] of m) if (p && p.id) profiles.set(String(p.id), p);
+  } catch (e) { console.error('profiles load:', e && e.message); }
+}
+function touchProfile(u, seenNow) {
+  let p = profiles.get(u.id);
+  const now = Date.now();
+  const changed = !p || p.name !== u.name || (p.avatar || null) !== (u.avatar || null);
+  if (!p) { p = { id: u.id, name: u.name, avatar: u.avatar || null, seen: now, dnd: false }; profiles.set(u.id, p); }
+  p.name = u.name; p.avatar = u.avatar || null;
+  if (seenNow) p.seen = now;
+  if (changed || seenNow) { playersBaseAt = 0; saveProfile(p); }
+  return p;
+}
 
 function send(u, msg) {
   if (!isOnline(u)) return;
@@ -163,9 +196,11 @@ function startRoom(u) {
 const cur = g => g.seats[g.turnIdx];
 const seatOf = (g, id) => g.seats.find(s => s.uid === id);
 
-function snapshot(g) {
+function snapshot(g, spectator) {
   return {
     t: 'game',
+    spectator: Boolean(spectator),
+    viewers: g.watchers.size,
     id: g.id,
     seats: g.seats.map(s => ({ color: s.color, id: s.uid, name: s.name, avatar: s.avatar, auto: s.auto, left: s.left })),
     tokens: g.tokens,
@@ -189,6 +224,10 @@ function sendGame(u) {
 function broadcastGame(g) {
   const msg = snapshot(g);
   g.seats.forEach(s => { if (!s.left) { const u = users.get(s.uid); if (u && u.game === g.id) send(u, msg); } });
+  if (g.watchers.size) {
+    const wm = snapshot(g, true);
+    for (const id of g.watchers) { const u = users.get(id); if (u && u.watch === g.id) send(u, wm); }
+  }
 }
 
 function shuffle(a) {
@@ -206,7 +245,7 @@ function startGame(list) {
     seats: list.map((u, i) => ({ uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, left: false })),
     tokens: L.newTokens(colors),
     turnIdx: 0, phase: 'roll', dice: null, legal: [], rollSeq: 0, sixes: 0,
-    deadline: 0, timer: null, winner: null, reason: null, last: null, at: Date.now(), emptySince: 0
+    deadline: 0, timer: null, watchers: new Set(), winner: null, reason: null, last: null, at: Date.now(), emptySince: 0
   };
   games.set(g.id, g);
   list.forEach(u => { u.game = g.id; leaveQueue(u, true); leaveRoom(u, true); });
@@ -307,19 +346,174 @@ function leaveGame(u) {
 }
 
 function maybeDrop(g) {
+  if (g.watchers.size) return;           // көрермендер бар болса, нәтиже экраны сақталады
   if (g.seats.every(s => s.left || !(users.get(s.uid) && users.get(s.uid).game === g.id))) destroyGame(g);
 }
 
 function destroyGame(g) {
   clearTimeout(g.timer);
   games.delete(g.id);
+  for (const id of g.watchers) { const w = users.get(id); if (w && w.watch === g.id) { w.watch = null; send(w, { t: 'idle' }); } }
+  g.watchers.clear();
   g.seats.forEach(s => { const u = users.get(s.uid); if (u && u.game === g.id) u.game = null; });
+}
+
+
+/* ================= Ойыншылар тізімі, шақыру, көру ================= */
+
+let playersBase = null;
+let playersBaseAt = 0;
+const activeGame = u => Boolean(u && u.game && games.has(u.game) && games.get(u.game).winner === null);
+
+function playersBaseList() {
+  const now = Date.now();
+  if (playersBase && now - playersBaseAt < 2000) return playersBase;
+  const list = [];
+  for (const [id, p] of profiles) {
+    const u = users.get(id);
+    const on = isOnline(u);
+    const busy = on && activeGame(u);
+    list.push({ id, name: p.name, avatar: p.avatar || null, status: on ? (busy ? 'game' : 'online') : 'offline',
+      watch: busy, dnd: Boolean(p.dnd), seen: on ? now : (p.seen || 0) });
+  }
+  const order = { online: 0, game: 1, offline: 2 };
+  list.sort((a, b) => (order[a.status] - order[b.status]) || (b.seen - a.seen));
+  playersBase = list;
+  playersBaseAt = now;
+  return list;
+}
+
+function coolLeft(from, to) {
+  const rec = pdecl.get(from + '>' + to);
+  return rec && rec.until > Date.now() ? Math.ceil((rec.until - Date.now()) / 1000) : 0;
+}
+
+function playersPayload(me) {
+  const base = playersBaseList();
+  const sentTo = new Set();
+  for (const k of pinvites.keys()) if (k.startsWith(me + '>')) sentTo.add(k.slice(me.length + 1));
+  const list = [];
+  let onlineCount = 0;
+  for (const e of base) {
+    if (e.id === me) continue;
+    if (e.status !== 'offline') onlineCount++;
+    if (list.length >= PLAYERS_LIMIT) continue;
+    list.push(Object.assign({}, e, { sent: sentTo.has(e.id), cool: coolLeft(me, e.id) }));
+  }
+  const mine = profiles.get(me);
+  return { t: 'players', list, total: base.length - (profiles.has(me) ? 1 : 0), onlineCount, dnd: Boolean(mine && mine.dnd), ttl: PINVITE_TTL / 1000 };
+}
+
+// notify: 'to' | 'from' | 'both' | 'none'
+function endPInvite(key, reason, notify, extra) {
+  const inv = pinvites.get(key);
+  if (!inv) return;
+  clearTimeout(inv.timer);
+  pinvites.delete(key);
+  if (notify === 'to' || notify === 'both') send(users.get(inv.to), { t: 'pinvite_end', from: inv.from, reason });
+  if (notify === 'from' || notify === 'both') send(users.get(inv.from), Object.assign({ t: 'pinvite_end', to: inv.to, reason }, extra || {}));
+}
+
+function clearPInvitesOf(id) {
+  for (const [key, inv] of pinvites) if (inv.from === id || inv.to === id) endPInvite(key, 'unavailable', 'both');
+}
+
+function sendPInvite(u, toId) {
+  toId = String(toId || '');
+  const target = users.get(toId);
+  if (!toId || toId === u.id) return send(u, { t: 'error', code: 'pinvite_invalid' });
+  if (activeGame(u)) return send(u, { t: 'error', code: 'busy' });
+  if (!isOnline(target)) return send(u, { t: 'error', code: 'pinvite_offline' });
+  if (activeGame(target)) return send(u, { t: 'error', code: 'pinvite_busy' });
+  const tp = profiles.get(toId);
+  if (tp && tp.dnd) return send(u, { t: 'error', code: 'pinvite_dnd' });
+  const cl = coolLeft(u.id, toId);
+  if (cl > 0) return send(u, { t: 'error', code: 'pinvite_cool', left: cl });
+  const key = u.id + '>' + toId;
+  if (pinvites.has(key)) return send(u, { t: 'pinvite_sent', to: toId });
+  for (const [k, inv] of pinvites) if (inv.from === u.id) endPInvite(k, 'cancelled', 'to');   // бір уақытта бір ғана шығыс шақыру
+  leaveQueue(u, true);
+  leaveRoom(u, true);
+  const inv = { from: u.id, to: toId, timer: null };
+  inv.timer = setTimeout(safe(() => endPInvite(key, 'expired', 'both')), PINVITE_TTL);
+  pinvites.set(key, inv);
+  playersBaseAt = 0;
+  send(u, { t: 'pinvite_sent', to: toId });
+  send(target, { t: 'pinvite_in', from: pub(u), ttl: PINVITE_TTL / 1000 });
+}
+
+function cancelPInvite(u, toId) {
+  toId = String(toId || '');
+  endPInvite(u.id + '>' + toId, 'cancelled', 'to');
+  send(u, { t: 'pinvite_end', to: toId, reason: 'cancelled' });
+}
+
+function answerPInvite(u, fromId, accept) {
+  fromId = String(fromId || '');
+  const key = fromId + '>' + u.id;
+  const inv = pinvites.get(key);
+  if (!inv) return send(u, { t: 'pinvite_end', from: fromId, reason: 'expired' });
+  if (!accept) {
+    const now = Date.now();
+    const rec = pdecl.get(key) || { count: 0, until: 0, last: 0 };
+    if (now - rec.last > PDECLINE_RESET) rec.count = 0;
+    rec.count++;
+    rec.last = now;
+    let cool = 0;
+    if (rec.count >= PDECLINE_LIMIT) { rec.count = 0; rec.until = now + PDECLINE_COOL; cool = PDECLINE_COOL / 1000; }
+    pdecl.set(key, rec);
+    return endPInvite(key, 'declined', 'from', cool ? { cool } : undefined);
+  }
+  const from = users.get(inv.from);
+  if (!isOnline(from) || activeGame(from) || activeGame(u)) return endPInvite(key, 'unavailable', 'both');
+  endPInvite(key, 'accepted', 'none');
+  pdecl.delete(key);
+  clearPInvitesOf(u.id);
+  clearPInvitesOf(from.id);
+  unwatch(u); unwatch(from);
+  startGame([from, u]);                   // 1-ге 1 Лудо
+}
+
+function unwatch(u) {
+  if (!u || !u.watch) return;
+  const g = games.get(u.watch);
+  u.watch = null;
+  if (g) { g.watchers.delete(u.id); maybeDrop(g); }
+}
+
+function watchStart(u, playerId) {
+  const target = users.get(String(playerId || ''));
+  const g = target && games.get(target.game);
+  if (!g || g.winner !== null || activeGame(u) || (g.watchers.size >= WATCH_LIMIT && !g.watchers.has(u.id))) {
+    return send(u, { t: 'error', code: 'watch_unavailable' });
+  }
+  unwatch(u);
+  leaveQueue(u, true);
+  leaveRoom(u, true);
+  g.watchers.add(u.id);
+  u.watch = g.id;
+  send(u, snapshot(g, true));
+  broadcastGame(g);                        // көрермен санын жаңартамыз
 }
 
 /* ================= Хабарламалар ================= */
 
 function handle(u, m) {
+  if (m.t === 'find' || m.t === 'room_create' || m.t === 'room_join') unwatch(u);
   switch (m.t) {
+    case 'players_get': return send(u, playersPayload(u.id));
+    case 'pinvite_send': return sendPInvite(u, m.to);
+    case 'pinvite_cancel': return cancelPInvite(u, m.to);
+    case 'pinvite_answer': return answerPInvite(u, m.from, Boolean(m.accept));
+    case 'watch_start': return watchStart(u, m.id);
+    case 'watch_stop': unwatch(u); return send(u, { t: 'idle' });
+    case 'dnd_set': {
+      const p = touchProfile(u, false);
+      p.dnd = Boolean(m.on);
+      playersBaseAt = 0;
+      saveProfile(p);
+      return send(u, { t: 'dnd', on: p.dnd });
+    }
     case 'ping': return send(u, { t: 'pong' });
     case 'find': return joinQueue(u);
     case 'cancel': return leaveQueue(u);
@@ -364,7 +558,8 @@ function onAuth(ws, m) {
   if (!u) { u = { id: info.id, game: null, ws: null }; users.set(info.id, u); }
   u.name = info.name; u.avatar = info.avatar || null; u.ws = ws;
   ws.user = u;
-  send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME });
+  const prof = touchProfile(u, true);
+  send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME, dnd: Boolean(prof.dnd) });
   const g = games.get(u.game);
   if (g) {
     const seat = seatOf(g, u.id);
@@ -379,6 +574,9 @@ function onClose(ws) {
   u.ws = null;
   leaveQueue(u, true);
   leaveRoom(u, true);
+  clearPInvitesOf(u.id);
+  unwatch(u);
+  touchProfile(u, true);
   const g = games.get(u.game);
   if (g) { const seat = seatOf(g, u.id); if (seat) seat.auto = true; }   // үзілсе, ойынды автомат жалғастырады
 }
@@ -467,6 +665,6 @@ const server = http.createServer(async (req, res) => {
   res.end('not found');
 });
 
-server.listen(3000, () => { setupTelegram(); });
+loadProfiles().finally(() => server.listen(3000, () => { setupTelegram(); }));
 
-module.exports = { handle, users, games, rooms };
+module.exports = { handle, users, games, rooms, profiles };
