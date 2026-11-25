@@ -173,3 +173,16 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .cform input{padding:9px 12px;font-size:15px;border-radius:12px}
 .cform button{width:42px;border-radius:12px;font-size:16px}
 .cm p{font-size:14px}
+
+/* кубик эффектісі: ұшып үлкейіп, айналып қонады */
+.pcard{position:relative}
+.pcard.rollz{z-index:20}
+.die.rolling{animation:fly .66s cubic-bezier(.3,.7,.4,1);filter:drop-shadow(0 14px 10px rgba(0,0,0,.55));z-index:21}
+@keyframes fly{
+  0%{transform:translateY(0) rotate(0) scale(1)}
+  22%{transform:translateY(-16px) rotate(170deg) scale(1.75)}
+  48%{transform:translateY(-6px) rotate(360deg) scale(2)}
+  72%{transform:translateY(-12px) rotate(540deg) scale(1.55)}
+  88%{transform:translateY(0) rotate(690deg) scale(1.12)}
+  100%{transform:translateY(0) rotate(720deg) scale(1)}}
+@media (prefers-reduced-motion:reduce){.die.rolling{animation-duration:.3s}}
