@@ -516,7 +516,11 @@ function renderGame(g) {
     else if (myTurn && g.phase === 'move') hintTxt = '👆 ' + t('hintMove');
     else if (turnSeat && g.phase !== 'over') hintTxt = turnSeat.name + ' ' + t('hintOther');
   }
-  $('hint').textContent = hintTxt;
+  const hintEl = $('hint');
+  hintEl.textContent = hintTxt;
+  hintEl.classList.toggle('empty', !hintTxt);
+  hintEl.classList.toggle('mine', Boolean(hintTxt && myTurn && g.winner === null && !g.spectator));
+  hintEl.style.setProperty('--hc', C[g.turn] || '#9aa0c4');
   if (myTurn && !S.lastTurnMine) haptic('success');
   S.lastTurnMine = myTurn;
 
