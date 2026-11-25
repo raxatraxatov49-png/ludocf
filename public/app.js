@@ -381,7 +381,7 @@ function rollDie(c, v) {
     S.dieBusy[c] = false;
     const pc2 = $('card' + c); if (pc2) pc2.classList.remove('rollz');
     if (S.latest) renderGame(S.latest);
-  }, 920);
+  }, 600);
 }
 
 function renderGame(g) {
