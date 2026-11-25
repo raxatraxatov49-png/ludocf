@@ -171,6 +171,7 @@ const SFX = (() => {
   const rnd = (a, b) => a + Math.random() * (b - a);
   function ready() {
     try {
+      if (ctx && ctx.state === 'closed') { ctx = null; master = null; }
       if (!ctx) {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return false;
@@ -180,9 +181,14 @@ const SFX = (() => {
         const d = NB.getChannelData(0);
         for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       }
-      if (ctx.state === 'suspended') ctx.resume();
-      return true;
+      if (ctx.state !== 'running') { const p = ctx.resume(); if (p && p.catch) p.catch(() => {}); }
+      return ctx.state === 'running';
     } catch (e) { return false; }
+  }
+  /* үнсіз буфер: iOS/Android дыбыс жүйесін оятады */
+  function wake() {
+    if (!ready() && !ctx) return;
+    try { const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch (e) {}
   }
   function click(t, f, q, dur, v) {
     const s = ctx.createBufferSource(); s.buffer = NB;
@@ -198,7 +204,7 @@ const SFX = (() => {
   }
   const play = fn => { if (ready()) { try { fn(ctx.currentTime + 0.02); } catch (e) {} } };
   return {
-    unlock() { ready(); },
+    unlock() { wake(); },
     /* кубик: жоғары өрлейтін тиктер + соңында «поп» */
     roll() { play(t => {
       for (let i = 0; i < 7; i++) { tone(t + i * 0.055, 'triangle', 600 + i * 120, 0, 0.05, 0.35); click(t + i * 0.055, 3500, 5, 0.02, 0.3); }
@@ -213,7 +219,12 @@ const SFX = (() => {
   };
 })();
 /* браузер дыбысты тек бірінші басқаннан кейін ашады */
-['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, () => SFX.unlock(), { once: true, passive: true }));
+['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => SFX.unlock(), { passive: true }));
+/* мини-аппқа қайта кіргенде / Telegram-ға оралғанда дыбыс жүйесін қайта қосу */
+document.addEventListener('visibilitychange', () => { if (!document.hidden) SFX.unlock(); });
+window.addEventListener('focus', () => SFX.unlock());
+window.addEventListener('pageshow', () => SFX.unlock());
+try { tg && tg.onEvent && (tg.onEvent('activated', () => SFX.unlock()), tg.onEvent('viewportChanged', () => SFX.unlock())); } catch (e) {}
 
 /* ---------- Күй ---------- */
 const S = { players: null, playersAt: 0, dnd: false, inv: null, ws: null, me: null, bot: '', room: null, queue: null, queueEnd: 0, game: null, gameEnd: 0, rollSeq: -1, lastTurnMine: false, noReconnect: false, dieBusy: {}, moveSeq: null, animating: false, latest: null, chat: [], unread: 0, app: '' };
@@ -234,7 +245,7 @@ function toast(text, bottom) {
   clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.add('hidden'), 2600);
 }
 const send = o => { if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(o)); };
-function haptic(kind) { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(kind); } catch (e) {} }
+function haptic(kind) { try { if (tg && tg.platform === 'android') return; tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(kind); } catch (e) {} }   // Android-та діріл өшірулі
 
 /* ---------- Тақта геометриясы ---------- */
 const C  = ['#e8192c', '#0a9a3f', '#f5c800', '#27a2f4'];   // қызыл, жасыл, сары, көк (ұяшық/карточка)
