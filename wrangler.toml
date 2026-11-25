@@ -17,10 +17,6 @@ tag = "v1"
 new_sqlite_classes = ["Hub"]
 
 [vars]
-# ӨЗГЕРТ: Worker сілтемесі және боттың username-і (@-сыз)
-WEBHOOK_URL = "https://ludocf.raxatarzubaev.workers.dev/telegram-webhook"
-MINI_APP_URL = "https://ludocf.raxatarzubaev.workers.dev"
-BOT_USERNAME = "YOUR_BOT_USERNAME"
-# Сынақ режимі (нағыз ботқа тимейді). Нағыз ботқа көшкенде екі жолды да өшір:
-DEV = "1"
-SKIP_WEBHOOK = "1"
+WEBHOOK_URL = "https://ludocf.raxatraxatov49.workers.dev/telegram-webhook"
+MINI_APP_URL = "https://ludocf.raxatraxatov49.workers.dev"
+BOT_USERNAME = "ludomilliybot"
