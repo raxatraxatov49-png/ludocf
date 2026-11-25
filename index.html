@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f1f">
+<title>Ludo</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Бас мәзір -->
+<main id="menu" class="screen active">
+  <header class="who">
+    <div class="ava" id="meAva"></div>
+    <b id="meName">…</b>
+    <div class="langs" id="langs">
+      <button data-lang="kk">ҚАЗ</button><button data-lang="uz">UZ</button><button data-lang="ru">РУС</button>
+    </div>
+  </header>
+  <h1 class="logo">LUDO</h1>
+  <section class="card">
+    <h2 data-i18n="randomTitle"></h2>
+    <p data-i18n="randomDesc"></p>
+    <button id="btnRandom" class="big" data-i18n="play"></button>
+  </section>
+  <section class="card">
+    <h2 data-i18n="friendTitle"></h2>
+    <p data-i18n="friendDesc"></p>
+    <button id="btnFriend" class="big alt" data-i18n="friendBtn"></button>
+  </section>
+  <div id="conn" class="conn hidden" data-i18n="connecting"></div>
+</main>
+
+<!-- Ойыншыларды күту (кездейсоқ іздеу де, доспен бөлме де) -->
+<main id="wait" class="screen">
+  <h2 class="wtitle" id="wTitle"></h2>
+  <div class="wcount" id="wCount">1/4</div>
+  <div id="wTimer" class="wtimer"></div>
+  <div class="slots" id="slots"></div>
+  <button id="btnInvite" class="pill hidden" data-i18n="invite"></button>
+  <button id="btnStart" class="pill go hidden" data-i18n="startGame"></button>
+  <button id="btnCancel" class="pill ghost hidden" data-i18n="cancel"></button>
+  <button id="btnWaitBack" class="fab left" aria-label="menu">☰</button>
+</main>
+
+<!-- Ойын -->
+<main id="game" class="screen">
+  <div class="bar top">
+    <div class="pcard" id="card0"></div>
+    <button id="dice" class="dice" aria-label="dice"></button>
+    <div class="pcard" id="card1"></div>
+  </div>
+  <div class="boardwrap"><svg id="board" viewBox="0 0 15 15"></svg></div>
+  <div class="bar bottom">
+    <div class="pcard" id="card3"></div>
+    <div class="pcard" id="card2"></div>
+  </div>
+  <div id="hint" class="hint"></div>
+  <button id="btnGameBack" class="fab left" aria-label="menu">☰</button>
+  <div id="over" class="over hidden">
+    <div class="obox">
+      <div class="otitle" data-i18n="winner"></div>
+      <div class="oname" id="oName"></div>
+      <button id="btnOver" class="pill go" data-i18n="toMenu"></button>
+    </div>
+  </div>
+  <div id="ask" class="over hidden">
+    <div class="obox">
+      <div class="oname" data-i18n="leaveAsk"></div>
+      <button id="askYes" class="pill go" data-i18n="leave"></button>
+      <button id="askNo" class="pill ghost" data-i18n="stay"></button>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<script src="app.js"></script>
+</body>
+</html>
