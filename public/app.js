@@ -487,7 +487,7 @@ function renderGame(g) {
     el.classList.toggle('done', seat.place != null);
     if (el.dataset.uid !== seat.id) {
       el.dataset.uid = seat.id;
-      el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="hearts"><i></i><i></i><i></i></span><span class="gonemark"></span><span class="tm"></span></div></div>' +
+      el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="hearts"><i></i><i></i><i></i></span><span class="gonemark"></span><span class="tm"></span></div></div><span class="vipbadge">VIP</span>' +
         '<button class="die" type="button" aria-label="dice"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></button>';
       el.onclick = () => { const d = el.querySelector('.die'); if (d && d.classList.contains('ready')) { d.classList.remove('ready'); send({ t: 'roll' }); } };
       setAva(el.querySelector('.ava'), seat);
@@ -751,7 +751,7 @@ setInterval(() => send({ t: 'ping' }), 25000);
 
 function showStats(w, g) {
   const el = $('meStats');
-  if (el) el.textContent = g ? '🏆 ' + (w || 0) + ' / ' + g : '';
+  if (el) el.textContent = '';   // «2 / 6» жазуы алынды
 }
 
 function onMsg(m) {
@@ -972,7 +972,7 @@ function applyMe(info) {
   showStats(info.wins, info.games);
   const ring = $('meRing');
   if (ring) ring.classList.toggle('novip', !info.vip);
-  $('meName').classList.toggle('gold', Boolean(info.vip));
+  $('meName').classList.toggle('vipname', Boolean(info.vip));
   if (S.screen === 'vip') renderVip();
   if (S.screen === 'shop') renderShop();
 }
