@@ -64,11 +64,13 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 @keyframes pulse{50%{transform:scale(1.12)}}
 @keyframes tumble{0%{transform:translateY(0) rotate(0) scale(1)}20%{transform:translateY(-9px) rotate(110deg) scale(1.12)}45%{transform:translateY(0) rotate(250deg) scale(1)}65%{transform:translateY(-5px) rotate(330deg) scale(1.06)}100%{transform:translateY(0) rotate(360deg) scale(1)}}
 .boardwrap{width:100%;max-width:520px;margin:10px 0}
-#board{width:100%;height:auto;display:block;touch-action:manipulation;filter:drop-shadow(0 14px 22px rgba(0,0,0,.65))}
+#board{width:100%;height:auto;display:block;overflow:visible;touch-action:manipulation;filter:drop-shadow(0 10px 22px rgba(0,0,0,.6))}
 .tok{transition:transform .32s ease-in-out}
-.tok .ring{display:none;transform-box:fill-box;transform-origin:center}
+.tok .lift{transition:transform .15s}
+.tok.moving .lift{transform:translateY(-.22px) scale(1.3)}
+.tok .sel{display:none;transform-box:fill-box;transform-origin:center}
 .tok.can{cursor:pointer}
-.tok.can .ring{display:block;animation:spin 2.4s linear infinite}
+.tok.can .sel{display:block;animation:spin 2.4s linear infinite}
 .tok.can .lift{animation:bob .7s infinite ease-in-out}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes bob{50%{transform:translateY(-.2px)}}
