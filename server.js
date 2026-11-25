@@ -53,16 +53,80 @@ const isOnline = u => Boolean(u && u.ws && u.ws.readyState === 1);
 const pub = u => { const p = profiles.get(u.id); return { id: u.id, name: u.name, avatar: u.avatar || null, vip: isVip(p) }; };
 const inGame = u => Boolean(u && u.game && games.has(u.game));
 
-/* ================= Профильдер (Durable Object сақтауында) ================= */
+/* ================= Сақтау: Upstash Redis (қосылмаса — Durable Object) =================
+   Variables: UPSTASH_REDIS_REST_URL және UPSTASH_REDIS_REST_TOKEN.
+   Кілт 'p:123' -> Redis hash 'ludo:p', өріс '123'. Ескі Durable Object деректері бірінші іске қосуда автоматты көшіріледі. */
 
 const CF = globalThis.__CF || {};
-function saveProfile(p) {
-  try { if (CF.putNow) Promise.resolve(CF.putNow('p:' + p.id, p)).catch(() => {}); } catch (e) { /* сақтау қатесі ойынды тоқтатпайды */ }
+const UP_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/+$/, '');
+const UP_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const UP = Boolean(UP_URL && UP_TOKEN);
+console.log('сақтау:', UP ? 'Upstash Redis' : 'Durable Object');
+
+async function upCmd(cmds) {                      // cmds: [['HSET', ...], ...] — бір pipeline сұранысы
+  const r = await fetch(UP_URL + '/pipeline', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + UP_TOKEN, 'content-type': 'application/json' },
+    body: JSON.stringify(cmds)
+  });
+  if (!r.ok) throw new Error('upstash HTTP ' + r.status);
+  const out = await r.json();
+  const bad = Array.isArray(out) && out.find(x => x && x.error);
+  if (bad) throw new Error('upstash: ' + bad.error);
+  return out;
 }
+const upSplit = key => { const i = key.indexOf(':'); return ['ludo:' + key.slice(0, i), key.slice(i + 1)]; };
+const upPend = new Map();                         // кілт -> соңғы мән (қатар жазуды біріктіреміз)
+let upTimer = null;
+function upSchedule(ms) { if (!upTimer) upTimer = setTimeout(upFlush, ms); }
+async function upFlush() {
+  upTimer = null;
+  if (!upPend.size) return;
+  const batch = Array.from(upPend); upPend.clear();
+  try {
+    for (let i = 0; i < batch.length; i += 200) {
+      const cmds = batch.slice(i, i + 200).map(([k, v]) => { const [h, f] = upSplit(k); return ['HSET', h, f, JSON.stringify(v)]; });
+      await upCmd(cmds);
+    }
+  } catch (e) {
+    console.error('upstash сақтау қатесі:', e && e.message);
+    batch.forEach(([k, v]) => { if (!upPend.has(k)) upPend.set(k, v); });   // қайта көреміз
+    upSchedule(5000);
+  }
+}
+async function upList(prefix) {
+  const out = await upCmd([['HGETALL', 'ludo:' + prefix.replace(/:$/, '')]]);
+  const r = out[0] && out[0].result, m = new Map();
+  const put = (f, v) => { try { m.set(prefix + f, JSON.parse(v)); } catch (e) { /* бүлінген жазбаны өткізіп жібереміз */ } };
+  if (Array.isArray(r)) for (let i = 0; i + 1 < r.length; i += 2) put(r[i], r[i + 1]);
+  else if (r && typeof r === 'object') for (const f of Object.keys(r)) put(f, r[f]);
+  return m;
+}
+function dbPut(key, val) {
+  try {
+    if (UP) { upPend.set(key, val); upSchedule(250); }
+    else if (CF.putNow) Promise.resolve(CF.putNow(key, val)).catch(() => {});
+  } catch (e) { /* сақтау қатесі ойынды тоқтатпайды */ }
+}
+async function dbList(prefix) {
+  if (!UP) return CF.listNow ? CF.listNow(prefix) : new Map();
+  const m = await upList(prefix);
+  if (!m.size && CF.listNow) {                    // Upstash бос: ескі Durable Object деректерін бір рет көшіреміз
+    const old = await CF.listNow(prefix);
+    if (old && old.size) {
+      for (const [k, v] of old) upPend.set(k, v);
+      await upFlush();
+      console.log('Durable Object -> Upstash көшірілді:', prefix, old.size);
+      return old;
+    }
+  }
+  return m;
+}
+
+function saveProfile(p) { dbPut('p:' + p.id, p); }
 async function loadProfiles() {
   try {
-    if (!CF.listNow) return;
-    const m = await CF.listNow('p:');
+    const m = await dbList('p:');
     for (const [, p] of m) if (p && p.id) profiles.set(String(p.id), p);
   } catch (e) { console.error('profiles load:', e && e.message); }
   await loadCfg();
@@ -459,7 +523,7 @@ function nextTurn(g) {
   beginTurn(g);
 }
 
-// Статистика: ойын саны мен жеңіс (Durable Object сақтауында)
+// Статистика: ойын саны мен жеңіс (Upstash / Durable Object сақтауында)
 function recordStats(g, color) {
   stats.games++; saveCfg();
   g.seats.forEach(s => {
@@ -562,7 +626,7 @@ function playersBaseList() {
     const on = isOnline(u);
     const busy = on && activeGame(u);
     list.push({ id, name: p.name, avatar: p.avatar || null, status: on ? (busy ? 'game' : 'online') : 'offline',
-      watch: busy, dnd: Boolean(p.dnd), vip: isVip(p), seen: on ? now : (p.seen || 0) });
+      watch: busy, dnd: Boolean(p.dnd), seen: on ? now : (p.seen || 0) });
   }
   const order = { online: 0, game: 1, offline: 2 };
   list.sort((a, b) => (order[a.status] - order[b.status]) || (b.seen - a.seen));
@@ -968,16 +1032,12 @@ const realId = id => /^\d+$/.test(String(id));
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function saveCfg() {
-  try {
-    if (!CF.putNow) return;
-    Promise.resolve(CF.putNow('cfg:admins', adminIds)).catch(() => {});
-    Promise.resolve(CF.putNow('cfg:stats', stats)).catch(() => {});
-  } catch (e) { /* сақтау қатесі ойынды тоқтатпайды */ }
+  dbPut('cfg:admins', adminIds);
+  dbPut('cfg:stats', stats);
 }
 async function loadCfg() {
   try {
-    if (!CF.listNow) return;
-    const m = await CF.listNow('cfg:');
+    const m = await dbList('cfg:');
     const a = m.get('cfg:admins');
     if (Array.isArray(a)) adminIds = a.map(String);
     const s = m.get('cfg:stats');
