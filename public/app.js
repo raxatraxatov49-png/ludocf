@@ -89,6 +89,79 @@ function applyI18n() {
   document.querySelectorAll('#langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
 }
 
+
+/* ---------- Дыбыстар (Web Audio, файлсыз) ---------- */
+const SFX = (() => {
+  let ctx = null, master = null, nbuf = null;
+  const ensure = () => {
+    try {
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+        nbuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        const d = nbuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    } catch (e) { return null; }
+  };
+  const env = (g, t, a, dur, vol) => {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  };
+  const tone = (f0, f1, t, dur, type, vol, a) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    env(g, t, a || 0.005, dur, vol);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  };
+  const burst = (t, dur, freq, q, vol) => {
+    const s = ctx.createBufferSource(); s.buffer = nbuf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); env(g, t, 0.004, dur, vol);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * 0.5, dur + 0.02);
+  };
+  return {
+    unlock: ensure,
+    // кубик: жылдам сатыр-сұтыр + соңғы соққы
+    roll() {
+      if (!ensure()) return; const t = ctx.currentTime;
+      [0, 0.06, 0.13, 0.21, 0.30, 0.40, 0.52].forEach((dt, i) => {
+        const v = 0.55 - i * 0.05;
+        burst(t + dt, 0.05, 1500 + Math.random() * 1800, 5, v);
+        tone(900 + Math.random() * 500, 500, t + dt, 0.04, 'square', 0.05);
+      });
+      tone(220, 120, t + 0.56, 0.09, 'sine', 0.3);
+    },
+    // тас бір ұяшыққа жүргенде
+    step() {
+      if (!ensure()) return; const t = ctx.currentTime;
+      tone(560, 470, t, 0.09, 'triangle', 0.5);
+      burst(t, 0.03, 1800, 3, 0.25);
+    },
+    // жұлдызға тұрғанда
+    star() {
+      if (!ensure()) return; const t = ctx.currentTime;
+      [988, 1319, 1760, 2349].forEach((f, i) => {
+        tone(f, f, t + i * 0.08, 0.55, 'sine', 0.28, 0.01);
+        tone(f * 2.01, f * 2.01, t + i * 0.08, 0.3, 'sine', 0.07, 0.01);
+      });
+    },
+    // тас жегенде
+    capture() {
+      if (!ensure()) return; const t = ctx.currentTime;
+      tone(520, 90, t, 0.38, 'sawtooth', 0.32, 0.004);
+      tone(260, 60, t, 0.42, 'square', 0.18, 0.004);
+      burst(t, 0.18, 700, 1.2, 0.7);
+      tone(160, 70, t + 0.05, 0.3, 'sine', 0.5);
+    }
+  };
+})();
+['pointerdown', 'touchstart', 'click'].forEach(ev => document.addEventListener(ev, () => SFX.unlock(), { passive: true }));
+
 /* ---------- Күй ---------- */
 const S = { players: null, playersAt: 0, dnd: false, inv: null, ws: null, me: null, bot: '', room: null, queue: null, queueEnd: 0, game: null, gameEnd: 0, rollSeq: -1, lastTurnMine: false, noReconnect: false, dieBusy: {}, moveSeq: null, animating: false, latest: null, chat: [], unread: 0, app: '' };
 function readStartParam() {
@@ -282,12 +355,14 @@ async function playMove(g) {
   for (const s of states) {
     const nxt = tokenPos(lm.color, s, lm.i);
     trail(lm.color, prev, nxt);
-    putTok(lm.color, lm.i, s, STEP, 1); hop(el, STEP);
+    putTok(lm.color, lm.i, s, STEP, 1); hop(el, STEP); SFX.step();
     prev = nxt;
     await sleep(STEP + 15);
   }
   el.classList.remove('moving');
+  if (!(lm.captured && lm.captured.length) && lm.to >= 0 && lm.to <= 50 && SAFE_STARS.includes((START[lm.color] + lm.to) % 52)) SFX.star();
   if (lm.captured && lm.captured.length) {
+    SFX.capture();
     haptic('error');
     await sleep(180);
     await Promise.all(lm.captured.map(async cp => {
@@ -339,9 +414,11 @@ function rollDie(c, v) {
   if (!d) return;
   S.dieBusy[c] = true;
   d.classList.remove('rolling'); void d.offsetWidth; d.classList.add('rolling');
+  const pc = $('card' + c); if (pc) pc.classList.add('rollz');
+  SFX.roll();
   let n = 0;
   const iv = setInterval(() => {
-    if (++n >= 8) { clearInterval(iv); setDie(c, v); S.dieBusy[c] = false; d.classList.remove('rolling'); }
+    if (++n >= 8) { clearInterval(iv); setDie(c, v); S.dieBusy[c] = false; d.classList.remove('rolling'); const pc2 = $('card' + c); if (pc2) pc2.classList.remove('rollz'); }
     else setDie(c, 1 + Math.floor(Math.random() * 6));
   }, 80);
 }
