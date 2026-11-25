@@ -7,6 +7,7 @@
 <title>Ludo</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="extra.css">
 </head>
 <body>
 
@@ -14,8 +15,8 @@
 <main id="menu" class="screen active">
   <div class="menuwrap">
     <header class="prof">
-      <div class="ringava"><i class="crown" aria-hidden="true">👑</i><div class="ava" id="meAva"></div></div>
-      <div class="pn"><b id="meName">…</b><small data-i18n="role"></small></div>
+      <div class="ringava novip" id="meRing"><i class="crown" id="meCrown" aria-hidden="true">👑</i><div class="ava" id="meAva"></div></div>
+      <div class="pn"><b id="meName">…</b><small data-i18n="role"></small><small id="meStats"></small></div>
       <div class="langs" id="langs">
         <button data-lang="kk">ҚАЗ</button><button data-lang="uz">UZ</button><button data-lang="ru">РУС</button>
       </div>
@@ -39,6 +40,46 @@
       <span class="chev">›</span>
     </button>
     <div id="conn" class="conn hidden" data-i18n="connecting"></div>
+  </div>
+</main>
+
+<!-- Рейтинг -->
+<main id="rating" class="screen navscr">
+  <div class="pg">
+    <div class="pghead"><h1 data-i18n="rkTitle"></h1><div class="pts" id="rkMy">⭐ 0</div></div>
+    <div class="seg" id="rkTabs"><button data-scope="week" class="on" data-i18n="rkWeek"></button><button data-scope="all" data-i18n="rkAll"></button></div>
+    <p class="note" id="rkNote"></p>
+    <div class="infocard"><b data-i18n="rkRulesT"></b><div class="ptsgrid" id="rkRules"></div><small data-i18n="rkRulesN"></small></div>
+    <div id="rkList" class="rklist"></div>
+    <div id="rkMe" class="rkrow me hidden"></div>
+  </div>
+</main>
+
+<!-- VIP -->
+<main id="vip" class="screen navscr">
+  <div class="pg">
+    <div class="pghead"><h1>VIP</h1></div>
+    <section class="vipcard" id="vipCard">
+      <div class="vcrown">👑</div>
+      <h2 id="vipH"></h2>
+      <p id="vipP"></p>
+      <div class="bar7" id="vipBar"></div>
+      <div class="vcount" id="vipCnt"></div>
+      <button id="btnVipInv" class="pill go" type="button"><span data-i18n="vipInvite"></span></button>
+      <small class="vhow" data-i18n="vipHow"></small>
+    </section>
+    <h3 class="sect" data-i18n="vipPerksT"></h3>
+    <ul class="perks" id="vipPerks"></ul>
+  </div>
+</main>
+
+<!-- Дүкен -->
+<main id="shop" class="screen navscr">
+  <div class="pg">
+    <div class="pghead"><h1 data-i18n="shopTitle"></h1><div class="pts vipb hidden" id="shopVip">👑 VIP</div></div>
+    <p class="note" data-i18n="shopNote"></p>
+    <h3 class="sect" data-i18n="shopSkins"></h3>
+    <div id="shopGrid" class="shopgrid"></div>
   </div>
 </main>
 
@@ -79,12 +120,25 @@
     <div class="pcard" id="card3"></div>
     <div class="pcard" id="card2"></div>
   </div>
-  <div id="gBar" class="gbar"><button id="btnGameBack" class="gb" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span data-i18n="menu"></span></button><button id="btnChatG" class="gb chatbtn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-5 4v-4H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg><span data-i18n="chatTitle"></span><b class="badge hidden"></b></button></div>
+  <div id="gBar" class="gbar"><button id="btnGameBack" class="gb" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span data-i18n="menu"></span></button><button id="btnChatG" class="gb chatbtn" type="button"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-5 4v-4H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg><span data-i18n="chatTitle"></span><b class="badge hidden"></b></button><button id="btnStk" class="gb hidden" type="button" aria-label="stickers"><span class="stkico">😎</span></button></div>
+  <div id="stk" class="stk hidden"></div>
   <div id="over" class="over hidden">
     <div class="obox">
-      <div class="otitle" data-i18n="winner"></div>
+      <div class="otitle" data-i18n="overTitle"></div>
       <div class="oname" id="oName"></div>
+      <div id="oMine" class="omine hidden"></div>
+      <div id="oList" class="olist"></div>
       <button id="btnOver" class="pill go" data-i18n="toMenu"></button>
+    </div>
+  </div>
+  <div id="fin" class="over hidden">
+    <div class="obox finbox">
+      <div class="bigmedal" id="finMedal"></div>
+      <div class="fintitle" id="finTitle"></div>
+      <div class="finpts" id="finPts"></div>
+      <p class="finhint" data-i18n="finHint"></p>
+      <button id="finWatch" class="pill go" data-i18n="finWatch"></button>
+      <button id="finMenu" class="pill ghost" data-i18n="finMenu"></button>
     </div>
   </div>
 </main>
@@ -115,6 +169,13 @@
   <div class="cquick"><button type="button">👍</button><button type="button">😂</button><button type="button">😡</button><button type="button">🔥</button><button type="button">😎</button></div>
   <div class="cform"><input id="chatInput" maxlength="200" autocomplete="off" data-i18n-ph="chatPh"><button id="chatSend" type="button" aria-label="send">➤</button></div>
 </div>
+
+<nav id="nav" class="nav hidden">
+  <button data-go="menu" type="button"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span data-i18n="navGame"></span></button>
+  <button data-go="rating" type="button"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 7v12M12 4v15M16 9v10M4 12v7M20 13v6"/></svg><span data-i18n="navRank"></span></button>
+  <button data-go="vip" type="button"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg><span>VIP</span></button>
+  <button data-go="shop" type="button"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span data-i18n="navShop"></span></button>
+</nav>
 
 <div id="toast" class="toast hidden"></div>
 <script src="app.js"></script>
