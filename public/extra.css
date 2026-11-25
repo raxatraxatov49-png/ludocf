@@ -24,27 +24,27 @@
 .seg button.on{background:#f3f3f3;color:#111}
 
 /* ---- VIP ---- */
-.vipcard{position:relative;text-align:center;padding:12px 14px 10px;border-radius:20px;border:1px solid rgba(244,197,66,.5);background:radial-gradient(120% 90% at 50% 0%,#4a3a10,#1c1708 70%);box-shadow:0 12px 34px rgba(0,0,0,.6)}
+.vipcard{position:relative;text-align:center;padding:13px 15px 11px;border-radius:22px;border:1px solid rgba(244,197,66,.5);background:radial-gradient(120% 90% at 50% 0%,#4a3a10,#1c1708 70%);box-shadow:0 12px 34px rgba(0,0,0,.6)}
 .vcrown{font-size:54px;line-height:1;filter:drop-shadow(0 0 14px rgba(244,197,66,.7))}
 .vipcard h2{margin:8px 0 4px;font-size:28px;font-weight:900;color:var(--gold2)}
 .vipcard p{margin:0 0 14px;color:#d8cfae;font-size:15px;line-height:1.4}
-.bar7{display:flex;gap:5px;margin:0 6px 6px}
-.bar7 i{flex:1;height:9px;border-radius:7px;background:rgba(255,255,255,.12)}
+.bar7{display:flex;gap:5px;margin:0 6px 7px}
+.bar7 i{flex:1;height:10px;border-radius:7px;background:rgba(255,255,255,.12)}
 .bar7 i.on{background:linear-gradient(90deg,#ffe58a,#e8b04e);box-shadow:0 0 8px rgba(244,197,66,.6)}
-.vcount{font-weight:900;font-size:15px;margin-bottom:8px}
-.vipcard .pill{padding:11px;font-size:14px;margin-bottom:6px}
-.vhow{display:block;color:#b9ae85;font-size:11px;line-height:1.25}
+.vcount{font-weight:900;font-size:16px;margin-bottom:9px}
+.vipcard .pill{padding:12px;font-size:15px;margin-bottom:7px}
+.vhow{display:block;color:#b9ae85;font-size:11.5px;line-height:1.3}
 .vipcard.on .bar7,.vipcard.on .pill,.vipcard.on .vhow{display:none}
 .vipcard h2{display:none}
 .vipcard.on h2{display:block}
 .vgold{color:var(--gold2)}
-.vsub{margin:2px 2px 8px;color:var(--gold2);font-size:14px;font-weight:700;line-height:1.25}
+.vsub{margin:2px 2px 8px;color:var(--gold2);font-size:14.5px;font-weight:700;line-height:1.3}
 .perks{margin-bottom:8px}
-.perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.perks li{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:14px;background:#1b1b1b;border:1px solid rgba(255,255,255,.06);font-size:14px;line-height:1.25}
-.perks li i{font-style:normal;font-size:22px;flex:none;line-height:1.1}
-.perks li b{display:block;font-size:14px;margin-bottom:1px;color:var(--gold2)}
-.perks li span{color:var(--muted);font-size:12px}
+.perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.perks li{display:flex;gap:11px;align-items:center;padding:10px 13px;border-radius:16px;background:#1b1b1b;border:1px solid rgba(255,255,255,.06);font-size:14px;line-height:1.3}
+.perks li i{font-style:normal;font-size:23px;flex:none;line-height:1.1}
+.perks li b{display:block;font-size:14.5px;margin-bottom:1px;color:var(--gold2)}
+.perks li span{color:var(--muted);font-size:12.5px}
 
 /* ---- Дүкен ---- */
 .shopgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -161,7 +161,24 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 
 /* ---- VIP экраны бір экранға сыяды ---- */
 #vip{padding-top:calc(var(--sat) + 2px)}
-#vip .pg{gap:8px}
+#vip .pg{gap:9px}
 #vip .pghead{padding-top:0}
-#vip .pghead h1{font-size:24px}
-@media (max-height:720px){#vip .perks li span,#vip .vhow{display:none}}
+#vip .pghead h1{font-size:26px}
+/* аласа экран: ықшамдау */
+@media (max-height:800px){
+  #vip .pg{gap:8px}
+  #vip .pghead h1{font-size:24px}
+  #vip .vsub{font-size:14px;margin:2px 2px 6px}
+  #vip .perks{gap:6px;margin-bottom:6px}
+  #vip .perks li{padding:8px 12px;border-radius:14px;gap:10px}
+  #vip .perks li i{font-size:22px}
+  #vip .perks li b{font-size:14px}
+  #vip .perks li span{font-size:12px}
+  #vip .vipcard{padding:10px 12px;border-radius:20px}
+  #vip .bar7 i{height:8px}
+  #vip .vcount{font-size:15px;margin-bottom:8px}
+  #vip .vipcard .pill{padding:11px;font-size:14px;margin-bottom:6px}
+  #vip .vhow{font-size:11px;line-height:1.25}
+}
+/* өте кішкентай экран: сипаттамаларды жасыру */
+@media (max-height:700px){#vip .perks li span,#vip .vhow{display:none}}
