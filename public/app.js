@@ -66,6 +66,12 @@ const EXTRA = {
     invExpired: 'Время приглашения истекло', invUnavailable: 'Игрок недоступен' }
 };
 Object.keys(EXTRA).forEach(l => Object.assign(I18N[l], EXTRA[l]));
+const EXTRA2 = {
+  kk: { no_players: 'Ойыншы табылмады', chatTitle: 'Чат', chatPh: 'Хабарлама жаз…' },
+  uz: { no_players: 'O‘yinchi topilmadi', chatTitle: 'Chat', chatPh: 'Xabar yozing…' },
+  ru: { no_players: 'Игрок не найден', chatTitle: 'Чат', chatPh: 'Напишите сообщение…' }
+};
+Object.keys(EXTRA2).forEach(l => Object.assign(I18N[l], EXTRA2[l]));
 const pickLang = c => { c = String(c || '').slice(0, 2).toLowerCase(); return I18N[c] ? c : null; };
 let lang = pickLang(localStorage.getItem('ludo_lang')) || pickLang(qs.get('lang')) ||
   pickLang(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.language_code) || 'kk';
@@ -73,16 +79,18 @@ const t = k => (I18N[lang] && I18N[lang][k]) || I18N.kk[k] || k;
 function applyI18n() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('#langs button').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
 }
 
 /* ---------- Күй ---------- */
-const S = { players: null, playersAt: 0, dnd: false, inv: null, ws: null, me: null, bot: '', room: null, queue: null, queueEnd: 0, game: null, gameEnd: 0, rollSeq: -1, lastTurnMine: false, noReconnect: false };
+const S = { players: null, playersAt: 0, dnd: false, inv: null, ws: null, me: null, bot: '', room: null, queue: null, queueEnd: 0, game: null, gameEnd: 0, rollSeq: -1, lastTurnMine: false, noReconnect: false, dieBusy: {}, moveSeq: null, animating: false, latest: null, chat: [], unread: 0, app: '' };
+function readStartParam() {
+  try { const sp = tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param; if (sp) return String(sp); } catch (e) {}
+  try { const h = new URLSearchParams(location.hash.replace(/^#/, '')); return h.get('tgWebAppStartParam') || qs.get('tgWebAppStartParam') || ''; } catch (e) { return ''; }
+}
 let pendingRoom = (qs.get('room') || '').toUpperCase();
-try {
-  const sp = tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param;
-  if (sp && /^room_/i.test(sp)) pendingRoom = sp.slice(5).toUpperCase();
-} catch (e) {}
+{ const sp = readStartParam(); if (/^room_/i.test(sp)) pendingRoom = sp.slice(5).toUpperCase(); }
 
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
@@ -96,7 +104,9 @@ const send = o => { if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(
 function haptic(kind) { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(kind); } catch (e) {} }
 
 /* ---------- Тақта геометриясы ---------- */
-const C = ['#d94f3d', '#43a05c', '#eab544', '#4382de'];           // қызыл, жасыл, сары, көк
+const C  = ['#e23b2e', '#1fa653', '#f4b400', '#2477ea'];   // қызыл, жасыл, сары, көк
+const CL = ['#ff9a8a', '#7ceaa5', '#ffe58a', '#9ccaff'];   // ашық реңк
+const CD = ['#8a1208', '#0a5a2c', '#9a6a00', '#0c3a8c'];   // қою реңк
 const START = [0, 13, 26, 39];
 const SAFE_STARS = [8, 21, 34, 47];
 const RING = [];
@@ -113,6 +123,7 @@ const rot = (p, k) => { let x = p[0], y = p[1]; for (let i = 0; i < k; i++) { co
 const BASE0 = [[2, 2], [4, 2], [2, 4], [4, 4]];
 const COL0 = [1, 2, 3, 4, 5].map(c => [c + 0.5, 7.5]);
 const FIN_OFF = [[-0.2, -0.22], [0.2, -0.22], [-0.2, 0.22], [0.2, 0.22]];
+const ZONES = [[0, 0], [9, 0], [9, 9], [0, 9]];
 
 function tokenPos(c, s, i) {
   if (s === -1) return rot(BASE0[i], c);
@@ -122,41 +133,97 @@ function tokenPos(c, s, i) {
   return [p[0] + FIN_OFF[i][0], p[1] + FIN_OFF[i][1]];
 }
 
+const starPts = (cx, cy, R, r) => {
+  const p = [];
+  for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, d = k % 2 ? r : R; p.push((cx + Math.cos(a) * d).toFixed(3) + ',' + (cy + Math.sin(a) * d).toFixed(3)); }
+  return p.join(' ');
+};
+
 function buildBoard() {
-  let h = '<rect width="15" height="15" fill="#fff"/>';
-  [[0, 0], [9, 0], [9, 9], [0, 9]].forEach(([x, y], c) => {
-    h += `<rect x="${x}" y="${y}" width="6" height="6" fill="${C[c]}"/><rect x="${x + 1}" y="${y + 1}" width="4" height="4" rx=".3" fill="#fff"/>`;
-    BASE0.forEach(p => { const q = rot(p, c); h += `<circle cx="${q[0]}" cy="${q[1]}" r=".42" fill="${C[c]}" fill-opacity=".18" stroke="${C[c]}" stroke-width=".07"/>`; });
+  let h = '<defs>';
+  for (let c = 0; c < 4; c++) {
+    h += `<linearGradient id="zg${c}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${CL[c]}"/><stop offset=".4" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></linearGradient>` +
+      `<linearGradient id="cg${c}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${CL[c]}"/><stop offset="1" stop-color="${C[c]}"/></linearGradient>` +
+      `<linearGradient id="pb${c}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${CD[c]}"/><stop offset=".36" stop-color="${CL[c]}"/><stop offset=".62" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></linearGradient>` +
+      `<radialGradient id="ph${c}" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="${CL[c]}"/><stop offset=".65" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></radialGradient>`;
+  }
+  h += '<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a4178"/><stop offset=".5" stop-color="#171b3a"/><stop offset="1" stop-color="#0a0d22"/></linearGradient>' +
+    '<linearGradient id="cell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7f8fd"/><stop offset="1" stop-color="#c9cee3"/></linearGradient>' +
+    '<radialGradient id="slotg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#03050d" stop-opacity=".8"/><stop offset=".85" stop-color="#03050d" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity=".15"/></radialGradient>' +
+    '<radialGradient id="shg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".65"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>' +
+    '<linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>' +
+    '<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#e09a00"/></linearGradient></defs>';
+
+  // қою жақтау + негіз
+  h += '<rect x="-.5" y="-.5" width="16" height="16" rx=".85" fill="url(#frame)"/>' +
+    '<rect x="-.14" y="-.14" width="15.28" height="15.28" rx=".4" fill="none" stroke="#7d86c8" stroke-opacity=".45" stroke-width=".05"/>' +
+    '<rect width="15" height="15" fill="#0b0f28"/>';
+
+  // 4 үй (түсті аймақ + ұялар)
+  ZONES.forEach(([x, y], c) => {
+    h += `<rect x="${x}" y="${y}" width="6" height="6" fill="url(#zg${c})"/>` +
+      `<rect x="${x + 1}" y="${y + 1}" width="4" height="4" rx=".55" fill="#050818" fill-opacity=".42" stroke="${CL[c]}" stroke-opacity=".75" stroke-width=".06"/>`;
+    BASE0.forEach(p => {
+      const q = rot(p, c);
+      h += `<circle cx="${q[0]}" cy="${q[1]}" r=".5" fill="url(#slotg)" stroke="${CL[c]}" stroke-opacity=".85" stroke-width=".07"/>` +
+        `<circle cx="${q[0]}" cy="${q[1]}" r=".3" fill="none" stroke="${C[c]}" stroke-opacity=".55" stroke-width=".05"/>`;
+    });
   });
-  RING.forEach(([x, y]) => { h += `<rect x="${x}" y="${y}" width="1" height="1" fill="#fff" stroke="#cdd2de" stroke-width=".04"/>`; });
+
+  // жол ұяшықтары
+  RING.forEach(([x, y]) => { h += `<rect x="${x + .03}" y="${y + .03}" width=".94" height=".94" rx=".1" fill="url(#cell)" stroke="#8f96b8" stroke-width=".04"/>`; });
   for (let c = 0; c < 4; c++) {
     const [sx, sy] = RING[START[c]];
-    h += `<rect x="${sx}" y="${sy}" width="1" height="1" fill="${C[c]}" stroke="#cdd2de" stroke-width=".04"/>`;
-    COL0.forEach(p => { const q = rot(p, c); h += `<rect x="${q[0] - 0.5}" y="${q[1] - 0.5}" width="1" height="1" fill="${C[c]}" stroke="#fff" stroke-width=".04"/>`; });
+    h += `<rect x="${sx + .03}" y="${sy + .03}" width=".94" height=".94" rx=".1" fill="url(#cg${c})" stroke="${CD[c]}" stroke-width=".05"/>` +
+      `<circle cx="${sx + .5}" cy="${sy + .5}" r=".24" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".06"/>`;
+    COL0.forEach(p => { const q = rot(p, c); h += `<rect x="${q[0] - .47}" y="${q[1] - .47}" width=".94" height=".94" rx=".1" fill="url(#cg${c})" stroke="${CD[c]}" stroke-width=".05"/>`; });
   }
-  SAFE_STARS.forEach(i => { const [x, y] = RING[i]; h += `<text x="${x + 0.5}" y="${y + 0.78}" font-size=".8" text-anchor="middle" fill="#aab0c0">☆</text>`; });
-  [[0, 7, '→', 0], [7, 0, '↓', 1], [14, 7, '←', 2], [7, 14, '↑', 3]].forEach(([x, y, a, c]) => {
-    h += `<text x="${x + 0.5}" y="${y + 0.75}" font-size=".8" text-anchor="middle" font-weight="700" fill="${C[c]}">${a}</text>`;
+  SAFE_STARS.forEach(i => { const [x, y] = RING[i]; h += `<polygon points="${starPts(x + .5, y + .5, .33, .14)}" fill="url(#gold)" stroke="#a86b00" stroke-width=".03" stroke-linejoin="round"/>`; });
+  [['.3,7.25 .72,7.5 .3,7.75', 0], ['7.25,.3 7.5,.72 7.75,.3', 1], ['14.7,7.25 14.28,7.5 14.7,7.75', 2], ['7.25,14.7 7.5,14.28 7.75,14.7', 3]].forEach(([pts, c]) => {
+    h += `<polygon points="${pts}" fill="${CD[c]}" stroke="${CD[c]}" stroke-width=".05" stroke-linejoin="round"/>`;
   });
-  h += `<polygon points="6,6 6,9 7.5,7.5" fill="${C[0]}"/><polygon points="6,6 9,6 7.5,7.5" fill="${C[1]}"/>` +
-       `<polygon points="9,6 9,9 7.5,7.5" fill="${C[2]}"/><polygon points="6,9 9,9 7.5,7.5" fill="${C[3]}"/>`;
-  h += '<g id="toks"></g>';
+
+  // орталық
+  [['6,6 6,9 7.5,7.5', 0], ['6,6 9,6 7.5,7.5', 1], ['9,6 9,9 7.5,7.5', 2], ['6,9 9,9 7.5,7.5', 3]].forEach(([pts, c]) => {
+    h += `<polygon points="${pts}" fill="url(#zg${c})" stroke="#0b0f28" stroke-width=".06" stroke-linejoin="round"/>`;
+  });
+  h += '<circle cx="7.5" cy="7.5" r=".3" fill="#fff" fill-opacity=".92" stroke="#0b0f28" stroke-width=".05"/><circle cx="7.5" cy="7.5" r=".14" fill="#0b0f28"/>';
+  h += '<rect width="15" height="15" fill="url(#gloss)" pointer-events="none"/><g id="toks"></g>';
   $('board').innerHTML = h;
 }
 
-/* ---------- Фишкалар ---------- */
+/* ---------- Фишкалар (3D көрінетін) ---------- */
 const tokEls = {};
 const SVGNS = 'http://www.w3.org/2000/svg';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 function tokEl(key, c) {
   if (tokEls[key]) return tokEls[key];
   const g = document.createElementNS(SVGNS, 'g');
   g.setAttribute('class', 'tok');
-  g.innerHTML = `<circle cy="-.1" r=".6" fill="transparent"/>` +
-    `<path d="M0 .4C-.2 .1 -.36 -.08 -.36 -.26A.36 .36 0 1 1 .36 -.26C.36 -.08 .2 .1 0 .4Z" fill="${C[c]}" stroke="#fff" stroke-width=".07"/>` +
-    `<circle cy="-.26" r=".13" fill="#fff"/>`;
+  g.innerHTML = '<circle r=".56" cy="-.02" fill="transparent"/>' +
+    '<ellipse cx=".05" cy=".37" rx=".44" ry=".17" fill="url(#shg)"/>' +
+    '<circle class="ring" r=".52" cy=".02" fill="none" stroke="#fff" stroke-width=".06" stroke-dasharray=".2 .13"/>' +
+    '<g class="lift">' +
+    `<path d="M-.34 .34Q-.34 .45 0 .45Q.34 .45 .34 .34C.3 .14 .16 .04 .1 -.08L-.1 -.08C-.16 .04 -.3 .14 -.34 .34Z" fill="url(#pb${c})" stroke="${CD[c]}" stroke-width=".03"/>` +
+    `<ellipse cy=".33" rx=".34" ry=".085" fill="${CD[c]}" fill-opacity=".5"/>` +
+    `<ellipse cy="-.06" rx=".15" ry=".05" fill="${CD[c]}" fill-opacity=".55"/>` +
+    `<circle cy="-.28" r=".21" fill="url(#ph${c})" stroke="${CD[c]}" stroke-width=".03"/>` +
+    '<ellipse cx="-.07" cy="-.36" rx=".075" ry=".045" fill="#fff" fill-opacity=".7" transform="rotate(-28 -.07 -.36)"/>' +
+    '</g>';
   $('toks').appendChild(g);
   tokEls[key] = g;
   return g;
+}
+function putTok(c, i, s, dur, sc) {
+  const el = tokEl(c + '-' + i, c);
+  el.style.transitionDuration = dur + 'ms';
+  const p = tokenPos(c, s, i);
+  el.style.transform = `translate(${p[0]}px,${p[1]}px) scale(${sc || 1})`;
+  return el;
+}
+function hop(el, dur) {
+  const l = el.querySelector('.lift');
+  if (l && l.animate) l.animate([{ transform: 'translateY(0px)' }, { transform: 'translateY(-.34px)', offset: .5 }, { transform: 'translateY(0px)' }], { duration: dur, easing: 'ease-out' });
 }
 
 function renderTokens(g) {
@@ -176,15 +243,53 @@ function renderTokens(g) {
   items.forEach(it => {
     let [x, y] = it.p, sc = it.s === 56 ? 0.55 : 1;
     const grp = it.s >= 0 && it.s < 56 ? groups[x + ',' + y] : null;
-    if (grp && grp.length > 1) { x += (grp.indexOf(it) - (grp.length - 1) / 2) * 0.24; sc = 0.78; }
+    if (grp && grp.length > 1) { x += (grp.indexOf(it) - (grp.length - 1) / 2) * 0.26; sc = 0.74; }
     const el = tokEl(it.key, it.c);
+    el.style.transitionDuration = '';
     el.style.transform = `translate(${x}px,${y}px) scale(${sc})`;
+    el._y = y;
     const can = canPick && it.c === mine.color && g.legal.includes(it.i);
     el.classList.toggle('can', Boolean(can));
     el.onclick = can ? () => send({ t: 'move', i: it.i }) : null;
   });
-  // таңдалатын фишкалар үстіне шығады
+  // төмендегі фишка алдында тұрсын (тереңдік), таңдалатындар ең үстінде
+  Object.values(tokEls).sort((a, b) => (a._y || 0) - (b._y || 0)).forEach(el => $('toks').appendChild(el));
   Object.values(tokEls).forEach(el => { if (el.classList.contains('can')) $('toks').appendChild(el); });
+}
+
+/* Жүріс анимациясы: фишка ұяшықтан ұяшыққа секіріп жүреді, жеген кезде жеңілген фишка артқа қарай өз жолымен үйіне қайтады */
+async function playMove(g) {
+  const lm = g.last;
+  if (!lm) return;
+  const STEP = 230;
+  const el = tokEl(lm.color + '-' + lm.i, lm.color);
+  $('toks').appendChild(el);
+  const states = [];
+  if (lm.from === -1) states.push(0); else for (let s = lm.from + 1; s <= lm.to; s++) states.push(s);
+  for (const s of states) { putTok(lm.color, lm.i, s, STEP, 1); hop(el, STEP); await sleep(STEP + 15); }
+  if (lm.captured && lm.captured.length) {
+    haptic('error');
+    await sleep(180);
+    await Promise.all(lm.captured.map(async cp => {
+      const e = tokEl(cp.color + '-' + cp.i, cp.color);
+      const path = [];
+      for (let s = cp.s - 1; s >= 0; s--) path.push(s);
+      path.push(-1);
+      const step = Math.max(30, Math.min(110, 1700 / path.length));
+      for (const s of path) { putTok(cp.color, cp.i, s, step, 1); hop(e, step); await sleep(step); }
+    }));
+  }
+}
+function syncTokens(g) {
+  if (S.animating) return;
+  if (S.moveSeq === null || g.moveSeq < S.moveSeq || g.moveSeq > S.moveSeq + 1 || !g.last) { S.moveSeq = g.moveSeq; return renderTokens(g); }
+  if (g.moveSeq === S.moveSeq + 1) {
+    S.moveSeq = g.moveSeq;
+    S.animating = true;
+    playMove(g).catch(() => {}).then(() => { S.animating = false; if (S.game && S.latest) syncTokens(S.latest); });
+    return;
+  }
+  renderTokens(g);
 }
 
 /* ---------- Ойын экраны ---------- */
@@ -193,40 +298,63 @@ function setAva(el, p) {
   if (p && p.avatar) { el.style.backgroundImage = `url("${p.avatar}")`; el.textContent = ''; }
   else { el.style.backgroundImage = ''; el.textContent = ((p && p.name) || '?').trim().charAt(0).toUpperCase(); }
 }
+const dieEl = c => document.querySelector('#card' + c + ' .die');
+function setDie(c, v) {
+  const d = dieEl(c);
+  if (!d) return;
+  const on = PIPS[v] || [];
+  for (let k = 0; k < 9; k++) d.children[k].classList.toggle('on', on.includes(k));
+}
+function rollDie(c, v) {
+  const d = dieEl(c);
+  if (!d) return;
+  S.dieBusy[c] = true;
+  d.classList.remove('rolling'); void d.offsetWidth; d.classList.add('rolling');
+  let n = 0;
+  const iv = setInterval(() => {
+    if (++n >= 8) { clearInterval(iv); setDie(c, v); S.dieBusy[c] = false; d.classList.remove('rolling'); }
+    else setDie(c, 1 + Math.floor(Math.random() * 6));
+  }, 80);
+}
 
 function renderGame(g) {
-  S.game = g;
+  S.game = g; S.latest = g;
   S.gameEnd = Date.now() + g.ms;
   const mine = g.seats.find(s => s.id === S.me.id);
   const myTurn = Boolean(mine && g.turn === mine.color);
+
+  // лақтырылған кубик анимациясы (тек лақтырған адамның кубигінде)
+  if (g.rollSeq !== S.rollSeq) {
+    if (S.rollSeq !== -1 && g.rollColor !== null && g.rollColor !== undefined) {
+      const rs = g.seats.find(s => s.color === g.rollColor);
+      if (rs) rollDie(g.rollColor, rs.dice);
+    }
+    S.rollSeq = g.rollSeq;
+  }
 
   for (let c = 0; c < 4; c++) {
     const el = $('card' + c);
     const seat = g.seats.find(s => s.color === c && !s.left);
     el.style.setProperty('--c', C[c]);
-    el.classList.toggle('off', !seat);
-    el.classList.toggle('act', Boolean(seat) && g.turn === c && g.winner === null);
-    if (!seat) { el.innerHTML = ''; continue; }
+    if (!seat) { el.classList.add('off'); el.classList.remove('act'); if (el.dataset.uid) { el.innerHTML = ''; el.dataset.uid = ''; } continue; }
+    el.classList.remove('off');
+    if (el.dataset.uid !== seat.id) {
+      el.dataset.uid = seat.id;
+      el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="pips"><i></i><i></i><i></i><i></i></span><span class="tm"></span></div></div>' +
+        '<button class="die" type="button" aria-label="dice"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></button>';
+      el.querySelector('.die').onclick = e => { if (e.currentTarget.classList.contains('ready')) send({ t: 'roll' }); };
+      setAva(el.querySelector('.ava'), seat);
+      S.dieBusy[c] = false;
+    }
+    el.classList.toggle('act', g.turn === c && g.winner === null);
     const done = (g.tokens[c] || []).filter(s => s === 56).length;
-    el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="pips">' +
-      [0, 1, 2, 3].map(i => `<i class="${i < done ? 'on' : ''}"></i>`).join('') + '</div></div><span class="tm"></span>';
-    setAva(el.querySelector('.ava'), seat);
+    el.querySelectorAll('.pips i').forEach((p, i) => p.classList.toggle('on', i < done));
     el.querySelector('b').textContent = seat.id === S.me.id ? t('you') : seat.name;
+    if (!S.dieBusy[c]) setDie(c, seat.dice);
+    el.querySelector('.die').classList.toggle('ready', seat.id === S.me.id && g.turn === c && g.phase === 'roll' && g.winner === null && !S.dieBusy[c]);
   }
 
-  const dice = $('dice');
-  if (g.dice) {
-    dice.innerHTML = '<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>';
-    (PIPS[g.dice] || []).forEach(k => dice.children[k].classList.add('on'));
-  } else dice.innerHTML = '';
-  dice.style.borderColor = g.phase === 'roll' && myTurn ? '#fff' : C[g.turn];
-  dice.classList.toggle('ready', myTurn && g.phase === 'roll' && g.winner === null);
-  if (g.rollSeq !== S.rollSeq) {
-    if (S.rollSeq !== -1 || g.dice) { dice.classList.remove('rolling'); void dice.offsetWidth; dice.classList.add('rolling'); }
-    S.rollSeq = g.rollSeq;
-  }
-
-  renderTokens(g);
+  syncTokens(g);
 
   const turnSeat = g.seats.find(s => s.color === g.turn);
   $('hint').textContent = g.winner !== null ? '' :
@@ -239,11 +367,32 @@ function renderGame(g) {
 
   if (g.winner !== null) {
     const w = g.seats.find(s => s.color === g.winner);
-    $('oName').textContent = w ? (w.id === S.me.id ? t('you') : w.name) : '';
-    $('oName').style.color = C[g.winner];
-    $('over').classList.remove('hidden');
+    const show = () => {
+      if (!S.game || S.game.winner === null) return;
+      $('oName').textContent = w ? (w.id === S.me.id ? t('you') : w.name) : '';
+      $('oName').style.color = C[g.winner];
+      $('over').classList.remove('hidden');
+    };
+    if (S.animating) setTimeout(show, 1800); else show();
   } else $('over').classList.add('hidden');
 }
+
+/* ---------- Чат ---------- */
+function renderChat() {
+  const box = $('chatList');
+  box.innerHTML = '';
+  S.chat.forEach(m => {
+    const mineMsg = S.me && m.id === S.me.id;
+    const row = document.createElement('div'); row.className = 'cm' + (mineMsg ? ' me' : '');
+    const n = document.createElement('b'); n.textContent = mineMsg ? t('you') : m.name; n.style.color = m.color !== null && m.color !== undefined ? CL[m.color] : '#c9cff0';
+    const p = document.createElement('p'); p.textContent = m.text;
+    row.appendChild(n); row.appendChild(p); box.appendChild(row);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+function updBadge() { document.querySelectorAll('.chatbtn .badge').forEach(b => { b.textContent = S.unread; b.classList.toggle('hidden', !S.unread); }); }
+function openChat() { S.unread = 0; updBadge(); $('chat').classList.remove('hidden'); renderChat(); }
+function sendChat(text) { text = String(text || '').trim(); if (text) send({ t: 'chat', text }); }
 
 /* ---------- Күту экраны ---------- */
 function renderWait() {
@@ -265,6 +414,7 @@ function renderWait() {
   });
   $('btnInvite').classList.toggle('hidden', !room);                         // шақыру: бөлмедегі барлығына
   $('btnStart').classList.toggle('hidden', !(isHost && list.length >= 2));   // бастау: тек жаратушыға, ≥2 адамда
+  $('btnChatW').classList.toggle('hidden', !room);
   $('btnCancel').classList.toggle('hidden', !q || Boolean(room));            // кездейсоқ іздеуде ғана
   $('wTimer').style.display = room ? 'none' : '';
   tick();
@@ -381,7 +531,7 @@ function renderMenu() {
   $('meName').textContent = S.me.name;
 }
 
-function inviteLink() { return `https://t.me/${S.bot}?startapp=room_${S.room.code}`; }
+function inviteLink() { return S.app ? `https://t.me/${S.bot}/${S.app}?startapp=room_${S.room.code}` : `https://t.me/${S.bot}?startapp=room_${S.room.code}`; }
 function invite() {
   if (!S.room) return;
   if (!S.bot || S.bot === 'YOUR_BOT_USERNAME') return toast(t('noBot'));
@@ -410,7 +560,7 @@ setInterval(() => send({ t: 'ping' }), 25000);
 function onMsg(m) {
   switch (m.t) {
     case 'hello':
-      S.me = m.me; S.bot = m.bot || ''; S.dnd = Boolean(m.dnd);
+      S.me = m.me; S.bot = m.bot || ''; S.app = m.app || ''; S.dnd = Boolean(m.dnd);
       reqPlayers();
       renderMenu();
       if (S.screen !== 'game') { S.room = null; S.queue = null; show('menu'); }
@@ -426,11 +576,15 @@ function onMsg(m) {
       break;
     case 'game':
       S.room = null; S.queue = null;
-      if (S.screen !== 'game') { S.rollSeq = -1; S.lastTurnMine = false; Object.keys(tokEls).forEach(k => { tokEls[k].remove(); delete tokEls[k]; }); }
+      if (S.screen !== 'game') {
+        S.rollSeq = -1; S.lastTurnMine = false; S.moveSeq = null; S.animating = false; S.dieBusy = {};
+        Object.keys(tokEls).forEach(k => { tokEls[k].remove(); delete tokEls[k]; });
+        for (let c = 0; c < 4; c++) { $('card' + c).dataset.uid = ''; }
+      }
       show('game'); renderGame(m);
       break;
     case 'idle':
-      S.room = null; S.queue = null; S.game = null;
+      S.room = null; S.queue = null; S.game = null; S.chat = []; S.unread = 0; updBadge(); $('chat').classList.add('hidden');
       $('over').classList.add('hidden');
       if (S.screen !== 'players') show('menu');
       break;
@@ -438,6 +592,14 @@ function onMsg(m) {
       S.players = m; S.playersAt = Date.now(); S.dnd = m.dnd;
       $('plOnlineBadge').textContent = m.onlineCount ? '● ' + m.onlineCount : '';
       if (S.screen === 'players') renderPlayers();
+      break;
+    case 'chat':
+      S.chat.push(m); if (S.chat.length > 60) S.chat.shift();
+      if ($('chat').classList.contains('hidden')) { if (!S.me || m.id !== S.me.id) { S.unread++; updBadge(); haptic('warning'); } }
+      else renderChat();
+      break;
+    case 'chat_hist':
+      S.chat = Array.isArray(m.list) ? m.list : []; renderChat();
       break;
     case 'dnd':
       S.dnd = m.on; if (S.screen === 'players') renderPlayers();
@@ -482,7 +644,12 @@ $('btnInvite').onclick = invite;
 $('btnStart').onclick = () => send({ t: 'room_start' });
 $('btnCancel').onclick = () => { send({ t: 'cancel' }); show('menu'); };
 $('btnWaitBack').onclick = () => { send({ t: S.room ? 'room_leave' : 'cancel' }); S.room = null; S.queue = null; show('menu'); };
-$('dice').onclick = () => { if ($('dice').classList.contains('ready')) send({ t: 'roll' }); };
+$('btnChatG').onclick = openChat;
+$('btnChatW').onclick = openChat;
+$('chatClose').onclick = () => $('chat').classList.add('hidden');
+$('chatSend').onclick = () => { sendChat($('chatInput').value); $('chatInput').value = ''; };
+$('chatInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('chatSend').click(); } };
+document.querySelectorAll('.cquick button').forEach(b => { b.onclick = () => sendChat(b.textContent); });
 $('btnGameBack').onclick = () => {
   if (S.game && S.game.spectator) return leaveWatch();
   if (S.game && S.game.winner !== null) return $('btnOver').click();
