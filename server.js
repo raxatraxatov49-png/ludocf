@@ -396,10 +396,7 @@ function assignPlace(g, seat) {
   const place = g.places.length + 1;
   g.places.push(seat.color);
   seat.place = place;
-  const table = SK.PTS[g.seats.length] || [];
-  // ұпай: тек кездейсоқ ойын; ойын басында тастап кеткен жағдайда берілмейді (фарм қорғанысы)
-  seat.pts = g.ranked && g.moveSeq >= 8 ? (table[place - 1] || 0) : 0;
-  if (seat.pts) addPoints(seat.uid, seat.pts);
+  seat.pts = 0;   // ұпай берілмейді (кездейсоқ ойында да)
 }
 
 // Белсенді ойыншы 1-ге түссе, ол соңғы орынды алады да ойын аяқталады
