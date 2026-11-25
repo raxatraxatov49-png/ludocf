@@ -1,27 +1,33 @@
 (() => {
 'use strict';
 const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor('#0b0f1f'); tg.setBackgroundColor('#0b0f1f'); } catch (e) {} }
+if (tg) {
+  try { tg.ready(); tg.expand(); } catch (e) {}
+  try { tg.setHeaderColor('#000000'); tg.setBackgroundColor('#000000'); tg.setBottomBarColor && tg.setBottomBarColor('#000000'); } catch (e) {}
+  try { tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {}   // төмен сырғытқанда жабылмайды
+  try { tg.requestFullscreen && tg.requestFullscreen(); } catch (e) {}           // толық экран, тек «Закрыть» арқылы жабылады
+  try { tg.enableClosingConfirmation && tg.enableClosingConfirmation(); } catch (e) {}
+}
 const $ = id => document.getElementById(id);
 const qs = new URLSearchParams(location.search);
 
 /* ---------- Тіл ---------- */
 const I18N = {
-  kk: { randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
+  kk: { role: 'Лудо ойыншысы', randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
     friendTitle: 'Доспен ойнау', friendDesc: 'Бөлме аш та, достарыңды шақыр', friendBtn: 'ДОСПЕН ОЙНАУ', connecting: 'Қосылуда…',
     waiting: 'Ойыншылар күтілуде', you: 'Сіз', invite: 'Шақыру', startGame: 'Ойынды бастау', cancel: 'Бас тарту',
     winner: 'Жеңімпаз', toMenu: 'Мәзірге', leaveAsk: 'Ойыннан шығасың ба?', leave: 'Шығу', stay: 'Қалу',
     hintRoll: 'Сенің кезегің — сүйекті бас', hintMove: 'Фишканы таңда', hintOther: 'жүріс жасауда…',
     inviteText: 'Менімен Лудо ойнайық! 🎲', room_gone: 'Бөлме табылмады', room_full: 'Бөлме толы', auth: 'Кіру қатесі',
     replaced: 'Басқа құрылғыда ашылды', noBot: 'Боттың username-і көрсетілмеген' },
-  uz: { randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
+  uz: { role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
     friendTitle: 'Do‘st bilan o‘ynash', friendDesc: 'Xona och va do‘stlaringni taklif qil', friendBtn: 'DO‘ST BILAN O‘YNASH', connecting: 'Ulanmoqda…',
     waiting: 'O‘yinchilar kutilmoqda', you: 'Siz', invite: 'Taklif qilish', startGame: 'O‘yinni boshlash', cancel: 'Bekor qilish',
     winner: 'G‘olib', toMenu: 'Menyuga', leaveAsk: 'O‘yindan chiqasanmi?', leave: 'Chiqish', stay: 'Qolish',
     hintRoll: 'Navbating — kubikni bos', hintMove: 'Toshni tanla', hintOther: 'yurmoqda…',
     inviteText: 'Men bilan Ludo o‘ynaymiz! 🎲', room_gone: 'Xona topilmadi', room_full: 'Xona to‘la', auth: 'Kirish xatosi',
     replaced: 'Boshqa qurilmada ochildi', noBot: 'Bot username ko‘rsatilmagan' },
-  ru: { randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
+  ru: { role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
     friendTitle: 'Играть с другом', friendDesc: 'Создай комнату и пригласи друзей', friendBtn: 'ИГРАТЬ С ДРУГОМ', connecting: 'Подключение…',
     waiting: 'Ожидание игроков', you: 'Вы', invite: 'Пригласить', startGame: 'Начать игру', cancel: 'Отмена',
     winner: 'Победитель', toMenu: 'В меню', leaveAsk: 'Выйти из игры?', leave: 'Выйти', stay: 'Остаться',
@@ -538,7 +544,7 @@ function tickExtra() {
   }
 }
 setInterval(() => { if (S.screen === 'players') reqPlayers(); }, 4000);
-setInterval(() => { if (S.screen === 'menu') reqPlayers(); }, 6000);
+setInterval(() => { if (S.screen === 'menu') reqPlayers(); }, 3000);
 
 function leaveWatch() {
   $('over').classList.add('hidden');
@@ -609,11 +615,11 @@ function onMsg(m) {
     case 'idle':
       S.room = null; S.queue = null; S.game = null; S.chat = []; S.unread = 0; updBadge(); $('chat').classList.add('hidden');
       $('over').classList.add('hidden');
-      if (S.screen !== 'players') show('menu');
+      if (S.screen !== 'players') { show('menu'); reqPlayers(); }
       break;
     case 'players':
       S.players = m; S.playersAt = Date.now(); S.dnd = m.dnd;
-      $('plOnlineBadge').textContent = m.onlineCount ? '● ' + m.onlineCount : '';
+      $('plOnlineBadge').textContent = (m.onlineCount || 0) + ' ' + t('stOnline');
       if (S.screen === 'players') renderPlayers();
       break;
     case 'chat':
