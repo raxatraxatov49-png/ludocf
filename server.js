@@ -1052,14 +1052,21 @@ const adminMenu = id => ({
     [{ text: '📢 Хабарлама жіберу', callback_data: 'a:bc' }]
   ].concat(isMain(id) ? [[{ text: '👮 Админдерді басқару', callback_data: 'a:admins' }]] : [])
 });
-const say = (chat, text, kb) => tgApi('sendMessage', { chat_id: chat, text, parse_mode: 'HTML', reply_markup: kb || undefined });
-const showMenu = (chat, id) => { adminState.delete(String(id)); return say(chat, '🛠 <b>Админ панель</b>\nБөлімді таңдаңыз:', adminMenu(id)); };
+// mid берілсе — сол хабарламаның өзін жаңартады (жаңа хабарлама жібермейді), болмаса жаңа хабарлама жібереді
+const say = async (chat, text, kb, mid) => {
+  if (mid) {
+    const r = await tgApi('editMessageText', { chat_id: chat, message_id: mid, text, parse_mode: 'HTML', reply_markup: kb || undefined }).catch(() => null);
+    if (r && (r.ok || /not modified/i.test(r.description || ''))) return r;
+  }
+  return tgApi('sendMessage', { chat_id: chat, text, parse_mode: 'HTML', reply_markup: kb || undefined });
+};
+const showMenu = (chat, id, mid) => { adminState.delete(String(id)); return say(chat, '🛠 <b>Админ панель</b>\nБөлімді таңдаңыз:', adminMenu(id), mid); };
 
-async function adminsScreen(chat) {
+async function adminsScreen(chat, mid) {
   const list = adminIds.length ? adminIds.map(i => { const p = profiles.get(i); return '• ' + (p ? label(p) : `<code>${i}</code>`); }).join('\n') : 'Қосымша админ жоқ';
   return say(chat, `👮 <b>Админдер</b>\n\n⭐ Бас админ: <code>${MAIN_ADMIN}</code>\n\n${list}`, {
     inline_keyboard: [[{ text: '➕ Админ қосу', callback_data: 'a:adm_add' }, { text: '➖ Админді өшіру', callback_data: 'a:adm_del' }], [{ text: '⬅️ Артқа', callback_data: 'a:menu' }]]
-  });
+  }, mid);
 }
 
 async function adminCb(cb) {
@@ -1068,10 +1075,11 @@ async function adminCb(cb) {
   tgApi('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => {});
   if (!chat || !isAdmin(from)) return;
   const d = String(cb.data || '');
-  const ask = (step, text) => { adminState.set(from, { step }); return say(chat, text, BACK); };
+  const mid = cb.message.message_id;
+  const ask = (step, text) => { adminState.set(from, { step }); return say(chat, text, BACK, mid); };
   switch (d) {
-    case 'a:menu': return showMenu(chat, from);
-    case 'a:stats': adminState.delete(from); return say(chat, statsText(), BACK);
+    case 'a:menu': return showMenu(chat, from, mid);
+    case 'a:stats': adminState.delete(from); return say(chat, statsText(), BACK, mid);
     case 'a:block': return ask('block', '🚫 Блоктау\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
     case 'a:unblock': return ask('unblock', '✅ Блоктан шығару\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
     case 'a:vip': return ask('vip_user', '👑 VIP беру\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
@@ -1080,11 +1088,11 @@ async function adminCb(cb) {
       const st = adminState.get(from);
       if (!st || st.step !== 'bc_confirm') return;
       adminState.delete(from);
-      if (broadcasting) return say(chat, '⏳ Басқа хабарлама жіберіліп жатыр, күте тұрыңыз.', BACK);
+      if (broadcasting) return say(chat, '⏳ Басқа хабарлама жіберіліп жатыр, күте тұрыңыз.', BACK, mid);
       runBroadcast(chat, st.chat, st.mid);
       return;
     }
-    case 'a:admins': if (!isMain(from)) return; adminState.delete(from); return adminsScreen(chat);
+    case 'a:admins': if (!isMain(from)) return; adminState.delete(from); return adminsScreen(chat, mid);
     case 'a:adm_add': if (!isMain(from)) return; return ask('adm_add', '➕ Жаңа админнің Telegram <b>ID</b> нөмірін жіберіңіз:');
     case 'a:adm_del': if (!isMain(from)) return; return ask('adm_del', '➖ Өшірілетін админнің <b>ID</b> нөмірін жіберіңіз:');
   }
