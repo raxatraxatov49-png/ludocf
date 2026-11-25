@@ -78,6 +78,54 @@ const EXTRA2 = {
   ru: { no_players: 'Игрок не найден', chatTitle: 'Чат', chatPh: 'Напишите сообщение…' }
 };
 Object.keys(EXTRA2).forEach(l => Object.assign(I18N[l], EXTRA2[l]));
+const EXTRA3 = {
+  kk: { navGame: 'Ойын', navRank: 'Рейтинг', navShop: 'Дүкен', rkTitle: 'Рейтинг', rkWeek: 'Осы апта', rkAll: 'Барлық уақыт',
+    rkNoteWeek: '7 күн сайын нөлден басталады · жаңаруға {d} күн {h} сағ қалды', rkNoteAll: 'Барлық уақыттағы ұпайлар (кездейсоқ ойын)',
+    rkRulesT: '🏆 Ұпай жүйесі (тек кездейсоқ ойын)', rkRulesN: '1-орын · 2-орын · 3-орын · 4-орын', rkPlayers: 'ойыншы', rkYou: 'Сіздің орныңыз', rkEmpty: 'Әзірге ұпай жинағандар жоқ. Кездейсоқ ойында жеңіп, бірінші бол!',
+    vipLocked: 'VIP ал', vipLockedP: '7 досыңды шақыр — VIP тегін ашылады', vipActive: 'VIP белсенді', vipActiveP: 'Барлық мүмкіндіктер ашық. Профиліңіз алтын түсте көрінеді.',
+    vipProg: '{n} / {m} дос шақырылды', vipInvite: 'Достарды шақыру', vipHow: 'Дос сілтеме арқылы ботқа бірінші рет кіргенде ғана есептеледі', vipUnlocked: '👑 VIP ашылды!', refText: 'Менімен Лудо ойнайық! 🎲',
+    vipPerksT: 'VIP мүмкіндіктері',
+    vp1: 'Басқалардың ойынын көру', vp1d: 'Ойыншылар тізімінен кез келген ойынды қарап отыра аласыз', vp2: 'Көрермен чаты', vp2d: 'Ойынды көргенде чатты көресіз және жаза аласыз; атыңыздың жанында VIP және «көрермен» белгісі тұрады',
+    vp3: 'Барлық тас түрлері ашық', vp3d: 'Дүкендегі барлық скиндер тегін киюге болады', vp4: 'Алтын VIP профиль', vp4d: 'Ойында және рейтингте атыңыз алтын түсті болып, 👑 белгісі көрінеді',
+    shopTitle: 'Дүкен', shopNote: 'Төлем — Telegram Stars (⭐) арқылы. Киген тасыңызды ойында басқалар да көреді.', shopSkins: 'Тас скиндері', equipped: 'Қойылған', equip: 'Кию', stkInter: 'интерактив стикер',
+    sk_classic: 'Классик', sk_classic_d: 'Әдеттегі тастар', sk_obsidian: 'Обсидиан', sk_obsidian_d: 'Қара тас · түтін және жарқыл', sk_gold: 'Алтын', sk_gold_d: 'Алтын тастар · шашылған тиындар',
+    sk_crystal: 'Кристалл', sk_crystal_d: 'Кристалл тастар · реңді ұшқындар', sk_fire: 'Жалын', sk_fire_d: 'Отты тастар · лава мен ұшқын', sk_ice: 'Мұз', sk_ice_d: 'Мұзды тастар · қар мен аяз', sk_neon: 'Неон', sk_neon_d: 'Жарқыраған ғарыш тастары',
+    pay_unavail: 'Төлем қазір қолжетімсіз', paid: '✅ Төлем өтті, тас ашылды!', owned: 'Бұл тас сізде бар', vip_only: 'Чатты тек VIP ойыншылар көреді',
+    overTitle: 'Ойын аяқталды', placeN: '{n}-орын', finWin: 'Сіз ұттыңыз! 🏆', finPlace: 'Сіз {n}-орын алдыңыз', finPts: '+{n} ұпай',
+    finHint: 'Ойыннан шыға аласыз немесе қалғандарды қарап отыра аласыз', finWatch: 'Қарап отыру', finMenu: 'Бас мәзір',
+    chatLocked: 'Ойынды көріп отырғанда чатты тек VIP ойыншылар көреді және жаза алады. 7 дос шақырып, VIP ал!', viewer: 'көрермен' },
+  uz: { navGame: 'O‘yin', navRank: 'Reyting', navShop: 'Do‘kon', rkTitle: 'Reyting', rkWeek: 'Shu hafta', rkAll: 'Barcha vaqt',
+    rkNoteWeek: 'Har 7 kunda noldan boshlanadi · yangilanishiga {d} kun {h} soat qoldi', rkNoteAll: 'Barcha vaqtdagi ochkolar (tasodifiy o‘yin)',
+    rkRulesT: '🏆 Ochko tizimi (faqat tasodifiy o‘yin)', rkRulesN: '1-o‘rin · 2-o‘rin · 3-o‘rin · 4-o‘rin', rkPlayers: 'o‘yinchi', rkYou: 'Sizning o‘rningiz', rkEmpty: 'Hozircha ochko to‘plaganlar yo‘q. Tasodifiy o‘yinda yutib, birinchi bo‘l!',
+    vipLocked: 'VIP ol', vipLockedP: '7 do‘stingni taklif qil — VIP bepul ochiladi', vipActive: 'VIP faol', vipActiveP: 'Barcha imkoniyatlar ochiq. Profilingiz oltin rangda ko‘rinadi.',
+    vipProg: '{n} / {m} do‘st taklif qilindi', vipInvite: 'Do‘stlarni taklif qilish', vipHow: 'Do‘st havola orqali botga birinchi marta kirgandagina hisoblanadi', vipUnlocked: '👑 VIP ochildi!', refText: 'Men bilan Ludo o‘ynaymiz! 🎲',
+    vipPerksT: 'VIP imkoniyatlari',
+    vp1: 'Boshqalarning o‘yinini ko‘rish', vp1d: 'O‘yinchilar ro‘yxatidan istalgan o‘yinni tomosha qilasiz', vp2: 'Tomoshabin chati', vp2d: 'O‘yinni ko‘rganda chatni ko‘rasiz va yoza olasiz; ismingiz yonida VIP va «tomoshabin» belgisi turadi',
+    vp3: 'Barcha tosh turlari ochiq', vp3d: 'Do‘kondagi barcha skinlarni bepul kiyasiz', vp4: 'Oltin VIP profil', vp4d: 'O‘yinda va reytingda ismingiz oltin rangda, 👑 belgisi bilan ko‘rinadi',
+    shopTitle: 'Do‘kon', shopNote: 'To‘lov — Telegram Stars (⭐) orqali. Kiygan toshingizni o‘yinda boshqalar ham ko‘radi.', shopSkins: 'Tosh skinlari', equipped: 'Kiyilgan', equip: 'Kiyish', stkInter: 'interaktiv stiker',
+    sk_classic: 'Klassik', sk_classic_d: 'Oddiy toshlar', sk_obsidian: 'Obsidian', sk_obsidian_d: 'Qora tosh · tutun va yarqiroq', sk_gold: 'Oltin', sk_gold_d: 'Oltin toshlar · sochilgan tangalar',
+    sk_crystal: 'Kristal', sk_crystal_d: 'Kristal toshlar · rangli uchqunlar', sk_fire: 'Olov', sk_fire_d: 'Olovli toshlar · lava va uchqun', sk_ice: 'Muz', sk_ice_d: 'Muzli toshlar · qor va ayoz', sk_neon: 'Neon', sk_neon_d: 'Yarqiroq kosmik toshlar',
+    pay_unavail: 'To‘lov hozir mavjud emas', paid: '✅ To‘lov o‘tdi, tosh ochildi!', owned: 'Bu tosh sizda bor', vip_only: 'Chatni faqat VIP o‘yinchilar ko‘radi',
+    overTitle: 'O‘yin tugadi', placeN: '{n}-o‘rin', finWin: 'Siz yutdingiz! 🏆', finPlace: 'Siz {n}-o‘rinni oldingiz', finPts: '+{n} ochko',
+    finHint: 'O‘yindan chiqishingiz yoki qolganlarni tomosha qilishingiz mumkin', finWatch: 'Tomosha qilish', finMenu: 'Bosh menyu',
+    chatLocked: 'O‘yinni tomosha qilganda chatni faqat VIP o‘yinchilar ko‘radi va yoza oladi. 7 do‘st taklif qilib, VIP ol!', viewer: 'tomoshabin' },
+  ru: { navGame: 'Игра', navRank: 'Рейтинг', navShop: 'Магазин', rkTitle: 'Рейтинг', rkWeek: 'Эта неделя', rkAll: 'Всё время',
+    rkNoteWeek: 'Каждые 7 дней начинается с нуля · до обновления {d} дн {h} ч', rkNoteAll: 'Очки за всё время (случайная игра)',
+    rkRulesT: '🏆 Система очков (только случайная игра)', rkRulesN: '1-е · 2-е · 3-е · 4-е место', rkPlayers: 'игрока', rkYou: 'Ваше место', rkEmpty: 'Пока никто не набрал очков. Выигрывай в случайной игре и стань первым!',
+    vipLocked: 'Получи VIP', vipLockedP: 'Пригласи 7 друзей — VIP откроется бесплатно', vipActive: 'VIP активен', vipActiveP: 'Все возможности открыты. Ваш профиль выделен золотом.',
+    vipProg: 'Приглашено {n} / {m}', vipInvite: 'Пригласить друзей', vipHow: 'Засчитывается, только если друг впервые зашёл в бота по вашей ссылке', vipUnlocked: '👑 VIP открыт!', refText: 'Сыграем в Лудо! 🎲',
+    vipPerksT: 'Возможности VIP',
+    vp1: 'Смотреть чужие игры', vp1d: 'Наблюдайте за любой игрой из списка игроков', vp2: 'Чат зрителей', vp2d: 'При просмотре игры вы видите чат и можете писать; рядом с именем — значок VIP и «зритель»',
+    vp3: 'Все виды фишек открыты', vp3d: 'Все скины из магазина можно надеть бесплатно', vp4: 'Золотой VIP-профиль', vp4d: 'В игре и рейтинге имя золотое, рядом значок 👑',
+    shopTitle: 'Магазин', shopNote: 'Оплата — Telegram Stars (⭐). Выбранные фишки видят остальные игроки.', shopSkins: 'Скины фишек', equipped: 'Надето', equip: 'Надеть', stkInter: 'интерактивных стикера',
+    sk_classic: 'Классика', sk_classic_d: 'Обычные фишки', sk_obsidian: 'Обсидиан', sk_obsidian_d: 'Чёрные фишки · дым и молнии', sk_gold: 'Золото', sk_gold_d: 'Золотые фишки · рассыпанные монеты',
+    sk_crystal: 'Кристалл', sk_crystal_d: 'Кристальные фишки · цветные искры', sk_fire: 'Огонь', sk_fire_d: 'Огненные фишки · лава и искры', sk_ice: 'Лёд', sk_ice_d: 'Ледяные фишки · снег и мороз', sk_neon: 'Неон', sk_neon_d: 'Светящиеся космические фишки',
+    pay_unavail: 'Оплата сейчас недоступна', paid: '✅ Оплата прошла, скин открыт!', owned: 'Этот скин у вас уже есть', vip_only: 'Чат видят только VIP-игроки',
+    overTitle: 'Игра окончена', placeN: '{n}-е место', finWin: 'Вы победили! 🏆', finPlace: 'Вы заняли {n}-е место', finPts: '+{n} очков',
+    finHint: 'Можно выйти из игры или остаться и посмотреть, как играют остальные', finWatch: 'Смотреть', finMenu: 'В меню',
+    chatLocked: 'При просмотре игры чат видят и пишут в нём только VIP-игроки. Пригласи 7 друзей и получи VIP!', viewer: 'зритель' }
+};
+Object.keys(EXTRA3).forEach(l => Object.assign(I18N[l], EXTRA3[l]));
 const pickLang = c => { c = String(c || '').slice(0, 2).toLowerCase(); return I18N[c] ? c : null; };
 let lang = pickLang(localStorage.getItem('ludo_lang')) || pickLang(qs.get('lang')) ||
   pickLang(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.language_code) || 'kk';
@@ -105,6 +153,7 @@ let pendingRoom = (qs.get('room') || '').toUpperCase();
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   S.screen = id;
+  updNav(); onScreen(id);
 }
 function toast(text) {
   const el = $('toast'); el.textContent = text; el.classList.remove('hidden');
@@ -158,7 +207,7 @@ function buildBoard() {
     h += `<radialGradient id="ph${c}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${CL[c]}"/><stop offset=".55" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></radialGradient>` +
       `<radialGradient id="gl${c}"><stop offset="0" stop-color="${CL[c]}" stop-opacity=".95"/><stop offset="1" stop-color="${C[c]}" stop-opacity="0"/></radialGradient>`;
   }
-  h += '<linearGradient id="pin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d929e"/><stop offset=".3" stop-color="#ffffff"/><stop offset=".65" stop-color="#d5d8df"/><stop offset="1" stop-color="#7a7f8b"/></linearGradient></defs>';
+  h += '<linearGradient id="pin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d929e"/><stop offset=".3" stop-color="#ffffff"/><stop offset=".65" stop-color="#d5d8df"/><stop offset="1" stop-color="#7a7f8b"/></linearGradient>' + extraDefs() + '</defs>';
   h += '<rect width="15" height="15" fill="#fff"/>';
 
   // 4 үй: қалың түсті жиек + ақ ішкі шаршы + 4 түсті дөңгелек
@@ -188,7 +237,7 @@ function buildBoard() {
   for (let c = 0; c < 4; c++) {
     h += `<path d="M.2 7.5H.82M.56 7.24L.82 7.5L.56 7.76" fill="none" stroke="${C[c]}" stroke-width=".05" stroke-linecap="round" stroke-linejoin="round" transform="rotate(${c * 90} 7.5 7.5)"/>`;
   }
-  h += `<rect width="15" height="15" fill="none" stroke="#222" stroke-width=".08"/><g id="fx"></g><g id="toks"></g>`;
+  h += `<rect width="15" height="15" fill="none" stroke="#222" stroke-width=".08"/><g id="medals"></g><g id="fx"></g><g id="toks"></g>`;
   $('board').innerHTML = h;
 }
 
@@ -199,14 +248,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const PIN = 'M0 -.02C-.2 -.3 -.4 -.45 -.4 -.66A.4 .4 0 1 1 .4 -.66C.4 -.45 .2 -.3 0 -.02Z';
 function tokEl(key, c) {
   if (tokEls[key]) return tokEls[key];
+  const sk = skinOfColor(c);
   const g = document.createElementNS(SVGNS, 'g');
   g.setAttribute('class', 'tok');
   g.innerHTML = '<circle class="halo" r=".52" cy="-.3"/>' + '<circle r=".5" cy="-.45" fill="transparent"/>' +
     '<ellipse class="gring" rx=".3" ry=".27" fill="none" stroke="#8c2323" stroke-width=".075"/>' +
     '<g class="lift">' +
     `<path d="${PIN}" fill="#000" fill-opacity=".28" transform="translate(.07 .05)"/>` +
-    `<path d="${PIN}" fill="url(#pin)" stroke="#2b2f3a" stroke-width=".035"/>` +
-    `<circle cy="-.66" r=".25" fill="url(#ph${c})" stroke="${CD[c]}" stroke-width=".035"/>` +
+    `<path d="${PIN}" fill="url(#bp_${sk})" stroke="${SKINS[sk].stroke}" stroke-width=".035"/>` +
+    headShape(sk, `url(#ph${c})`, CD[c]) +
     '<ellipse cx="-.08" cy="-.75" rx=".09" ry=".05" fill="#fff" fill-opacity=".65" transform="rotate(-30 -.08 -.75)"/>' +
     '</g>';
   $('toks').appendChild(g);
@@ -405,6 +455,9 @@ function renderGame(g) {
     el.style.setProperty('--c', C[c]);
     if (!seat) { el.classList.add('off'); el.classList.remove('act'); if (el.dataset.uid) { el.innerHTML = ''; el.dataset.uid = ''; } continue; }
     el.classList.remove('off');
+    el.dataset.skin = skinKey(seat.skin); applySkinVars(el, seat.skin);
+    el.classList.toggle('vip', Boolean(seat.vip));
+    el.classList.toggle('done', seat.place != null);
     if (el.dataset.uid !== seat.id) {
       el.dataset.uid = seat.id;
       el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="hearts"><i></i><i></i><i></i></span><span class="gonemark"></span><span class="tm"></span></div></div>' +
@@ -414,7 +467,7 @@ function renderGame(g) {
       S.dieBusy[c] = false;
     }
     el.classList.toggle('gone', Boolean(seat.left));
-    el.querySelector('.gonemark').textContent = seat.left ? '🚪 ' + t('leftMark') : '';
+    el.querySelector('.gonemark').textContent = seat.left && seat.place == null ? '🚪 ' + t('leftMark') : seat.place != null ? placeLabel(seat) : '';
     el.classList.toggle('act', g.turn === c && g.winner === null && !seat.left);
     const lives = seat.lives == null ? 3 : seat.lives;
     el.querySelectorAll('.hearts i').forEach((p, i) => p.classList.toggle('on', i < lives));
@@ -424,8 +477,9 @@ function renderGame(g) {
   }
 
   syncTokens(g);
-  $('btnChatG').classList.toggle('hidden', Boolean(g.spectator));
-  if (g.spectator) $('chat').classList.add('hidden');
+  $('btnChatG').classList.toggle('lock', Boolean(g.spectator && !(S.info && S.info.vip)));
+  renderMedals(g);
+  updStk(g, mine);
 
   const turnSeat = g.seats.find(s => s.color === g.turn);
   let hintTxt = '';
@@ -440,25 +494,29 @@ function renderGame(g) {
   S.lastTurnMine = myTurn;
 
   if (g.winner !== null) {
-    const w = g.seats.find(s => s.color === g.winner);
     const show = () => {
       if (!S.game || S.game.winner === null) return;
-      $('oName').textContent = w ? (w.id === S.me.id ? t('you') : w.name) : '';
-      $('oName').style.color = C[g.winner];
+      renderOver(S.game);
+      $('fin').classList.add('hidden');
       $('over').classList.remove('hidden');
     };
     if (S.animating) setTimeout(show, 1800); else show();
-  } else $('over').classList.add('hidden');
+  } else { $('over').classList.add('hidden'); checkFin(g, mine); }
 }
 
 /* ---------- Чат ---------- */
 function renderChat() {
   const box = $('chatList');
   box.innerHTML = '';
+  const locked = Boolean(S.game && S.game.spectator && !(S.info && S.info.vip));
+  $('chat').classList.toggle('locked', locked);
+  if (locked) { box.innerHTML = '<div class="clock"><i>🔒</i>' + t('chatLocked') + '</div>'; return; }
   S.chat.forEach(m => {
     const mineMsg = S.me && m.id === S.me.id;
     const row = document.createElement('div'); row.className = 'cm' + (mineMsg ? ' me' : '');
     const n = document.createElement('b'); n.textContent = mineMsg ? t('you') : m.name; n.style.color = m.color !== null && m.color !== undefined ? CL[m.color] : '#c9cff0';
+    if (m.vip) n.className = 'vipn';
+    if (m.spec) { const sp = document.createElement('span'); sp.className = 'spec'; sp.textContent = '👁 ' + t('viewer'); n.appendChild(sp); }
     const p = document.createElement('p'); p.textContent = m.text;
     row.appendChild(n); row.appendChild(p); box.appendChild(row);
   });
@@ -647,6 +705,7 @@ function invite() {
 
 /* ---------- Байланыс ---------- */
 function connect() {
+  if (qs.get('mock')) return mockInit();
   const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
   S.ws = ws;
   ws.onopen = () => {
@@ -663,10 +722,17 @@ function connect() {
 }
 setInterval(() => send({ t: 'ping' }), 25000);
 
+function showStats(w, g) {
+  const el = $('meStats');
+  if (el) el.textContent = g ? '🏆 ' + (w || 0) + ' / ' + g : '';
+}
+
 function onMsg(m) {
   switch (m.t) {
     case 'hello':
       S.me = m.me; S.bot = m.bot || ''; S.app = m.app || ''; S.dnd = Boolean(m.dnd);
+      S.catalog = m.catalog || []; applyMe(m.info);
+      if (pendingRef) { send({ t: 'ref', id: pendingRef }); pendingRef = ''; }
       reqPlayers();
       renderMenu();
       if (S.screen !== 'game') { S.room = null; S.queue = null; show('menu'); }
@@ -689,13 +755,21 @@ function onMsg(m) {
       }
       show('game'); renderGame(m);
       break;
+    case 'stats':
+      showStats(m.wins, m.games);
+      break;
+    case 'me': applyMe(m); break;
+    case 'rank': m.at = Date.now(); S.rank[m.scope] = m; if (S.screen === 'rating') renderRank(); break;
+    case 'invoice': openInvoice(m); break;
+    case 'vip_unlocked': toast(t('vipUnlocked')); haptic('success'); break;
+    case 'sticker': popSticker(m.color, m.e); break;
     case 'kicked':
       toast(t('kicked')); haptic('error');
       break;
     case 'idle':
       S.room = null; S.queue = null; S.game = null; S.chat = []; S.unread = 0; updBadge(); $('chat').classList.add('hidden');
-      $('over').classList.add('hidden');
-      if (S.screen !== 'players') { show('menu'); reqPlayers(); }
+      $('over').classList.add('hidden'); $('fin').classList.add('hidden'); $('stk').classList.add('hidden');
+      if (!['players', 'rating', 'vip', 'shop'].includes(S.screen)) { show('menu'); reqPlayers(); }
       break;
     case 'players':
       S.players = m; S.playersAt = Date.now(); S.dnd = m.dnd;
@@ -767,7 +841,7 @@ $('chatInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $
 document.querySelectorAll('.cquick button').forEach(b => { b.onclick = () => sendChat(b.textContent); });
 $('btnGameBack').onclick = () => {
   if (S.game && S.game.winner !== null && !S.game.spectator) return $('btnOver').click();
-  openAsk(S.game && S.game.spectator ? 'exit' : 'surrender');
+  openAsk(isDone() ? 'exit' : 'surrender');
 };
 $('askNo').onclick = () => $('ask').classList.add('hidden');
 $('askYes').onclick = () => {
@@ -802,6 +876,298 @@ $('board').addEventListener('pointerdown', e => {
   send({ t: 'move', i: best.i });
   setTimeout(() => { if (S.latest && !S.animating && S.screen === 'game') renderTokens(S.latest); }, 1500);
 });
+
+
+/* ====================================================================
+   ЖАҢА БӨЛІМДЕР: төменгі мәзір, рейтинг, VIP, дүкен, орындар/медальдар, стикерлер
+   ==================================================================== */
+const FPRICE = 15;                                   // барлық скин бағасы (Telegram Stars)
+const MEDAL = n => ['🥇', '🥈', '🥉', '4️⃣'][n - 1] || String(n);
+const SKIN_IDS = ['classic', 'obsidian', 'gold', 'crystal', 'fire', 'ice', 'neon'];
+// Әр скиннің көрінісі: пин градиенті, жиек, гем-бас, кубик түсі
+const SKINS = {
+  classic:  { pin: ['#8d929e', '#ffffff', '#d5d8df', '#7a7f8b'], stroke: '#2b2f3a', gem: false, bg: 'linear-gradient(145deg,#ffffff,#eef0f7 45%,#c9cedf)', pip: '#111' },
+  obsidian: { pin: ['#07070b', '#4b4b5c', '#17171f', '#030305'], stroke: '#000', gem: false, bg: 'linear-gradient(145deg,#33343f,#17181f 55%,#09090d)', pip: '#f2f2f7' },
+  gold:     { pin: ['#946108', '#ffe58a', '#e2a92b', '#74500a'], stroke: '#6b4a06', gem: false, bg: 'linear-gradient(145deg,#ffe896,#ebb73e 55%,#bb841c)', pip: '#4a3000' },
+  crystal:  { pin: ['#b7dcfb', '#ffffff', '#d0eafe', '#8fc3ef'], stroke: '#5aa0d8', gem: true, bg: 'linear-gradient(145deg,#e9f6ff,#b9dcfb 55%,#88bef1)', pip: '#0f3f73' },
+  fire:     { pin: ['#4d0b00', '#ff9a2a', '#e8410c', '#340700'], stroke: '#340700', gem: false, bg: 'linear-gradient(145deg,#ffb347,#ff5a1f 55%,#b81d00)', pip: '#fff7e0' },
+  ice:      { pin: ['#6fa7c9', '#f4fcff', '#c1e8f8', '#5e93b5'], stroke: '#2f6b8e', gem: true, bg: 'linear-gradient(145deg,#f3fcff,#c0eafb 55%,#8fd1ef)', pip: '#0b4a6e' },
+  neon:     { pin: ['#2a0a4d', '#b774ff', '#6a2cd6', '#10031f'], stroke: '#0b0220', gem: false, glow: '#b36bff', bg: 'linear-gradient(145deg,#2c0f59,#12062b)', pip: '#4dffb8' }
+};
+const skinKey = k => (SKINS[k] ? k : 'classic');
+function skinOfColor(c) {
+  const g = S.game || S.latest;
+  const s = g && g.seats.find(x => x.color === c);
+  return skinKey(s && s.skin);
+}
+function pinStops(sk) { return [0, .3, .65, 1].map((o, i) => `<stop offset="${o}" stop-color="${SKINS[sk].pin[i]}"/>`).join(''); }
+function extraDefs() {
+  return SKIN_IDS.map(id => `<linearGradient id="bp_${id}" x1="0" y1="0" x2="1" y2="0">${pinStops(id)}</linearGradient>`).join('') +
+    [['#fff2a8', '#f2b705', '#a87300'], ['#ffffff', '#c9d0dc', '#7c8596'], ['#ffd5a6', '#cd7f32', '#7a4414'], ['#d9dce3', '#9097a6', '#565d6c']]
+      .map((s, i) => `<radialGradient id="mg${i + 1}" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="${s[0]}"/><stop offset=".55" stop-color="${s[1]}"/><stop offset="1" stop-color="${s[2]}"/></radialGradient>`).join('');
+}
+function headShape(sk, fill, stroke) {
+  const d = SKINS[sk];
+  const glow = d.glow ? `<circle cy="-.66" r=".36" fill="${d.glow}" opacity=".28"/>` : '';
+  const head = d.gem
+    ? `<polygon points="0,-.98 .28,-.66 0,-.34 -.28,-.66" fill="${fill}" stroke="${stroke}" stroke-width=".035" stroke-linejoin="round"/>`
+    : `<circle cy="-.66" r=".25" fill="${fill}" stroke="${stroke}" stroke-width=".035"/>`;
+  return glow + head;
+}
+
+/* ---------- Төменгі мәзір ---------- */
+const NAVS = ['menu', 'rating', 'vip', 'shop'];
+function updNav() {
+  $('nav').classList.toggle('hidden', !NAVS.includes(S.screen));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.go === S.screen));
+}
+function onScreen(id) {
+  if (id === 'rating') { reqRank(); renderRank(); }
+  if (id === 'vip') { send({ t: 'me_get' }); renderVip(); }
+  if (id === 'shop') { send({ t: 'me_get' }); renderShop(); }
+}
+document.querySelectorAll('#nav button').forEach(b => { b.onclick = () => show(b.dataset.go); });
+
+/* ---------- Профиль / ұпай ақпараты ---------- */
+S.info = null; S.catalog = []; S.rank = {}; S.rankScope = 'week'; S.finFor = null;
+function applyMe(info) {
+  if (!info) return;
+  S.info = info;
+  showStats(info.wins, info.games);
+  const ring = $('meRing');
+  if (ring) ring.classList.toggle('novip', !info.vip);
+  $('meName').classList.toggle('gold', Boolean(info.vip));
+  if (S.screen === 'rating') renderRank();
+  if (S.screen === 'vip') renderVip();
+  if (S.screen === 'shop') renderShop();
+}
+
+/* ---------- Рейтинг ---------- */
+function reqRank() { send({ t: 'rank_get', scope: S.rankScope }); }
+document.querySelectorAll('#rkTabs button').forEach(b => {
+  b.onclick = () => { S.rankScope = b.dataset.scope; reqRank(); renderRank(); };
+});
+function renderRank() {
+  document.querySelectorAll('#rkTabs button').forEach(b => b.classList.toggle('on', b.dataset.scope === S.rankScope));
+  const d = S.rank[S.rankScope];
+  $('rkMy').textContent = '⭐ ' + (S.info ? (S.rankScope === 'week' ? S.info.wpts : S.info.pts) : 0);
+  const rules = [[4, '15 · 10 · 5 · 0'], [3, '15 · 10 · 0'], [2, '10 · 5']];
+  $('rkRules').innerHTML = rules.map(r => `<div>${r[0]} ${t('rkPlayers')}<b>${r[1]}</b></div>`).join('');
+  if (S.rankScope === 'week') {
+    const ms = d ? Math.max(0, d.resetMs - (Date.now() - d.at)) : 0;
+    $('rkNote').textContent = t('rkNoteWeek').replace('{d}', Math.floor(ms / 864e5)).replace('{h}', Math.floor(ms % 864e5 / 36e5));
+  } else $('rkNote').textContent = t('rkNoteAll');
+  const box = $('rkList');
+  box.innerHTML = '';
+  if (!d) return;
+  if (!d.list.length) { const e = document.createElement('div'); e.className = 'rkempty'; e.textContent = t('rkEmpty'); box.appendChild(e); }
+  d.list.forEach((p, i) => box.appendChild(rankRow(p, i + 1, p.id === (S.me && S.me.id))));
+  const me = $('rkMe');
+  me.classList.remove('hidden');
+  me.innerHTML = '';
+  fillRankRow(me, { id: S.me.id, name: S.me.name, avatar: S.me.avatar, vip: S.info && S.info.vip, v: d.me.v }, d.me.rank, true);
+}
+function rankRow(p, rank, isMe) {
+  const row = document.createElement('div');
+  row.className = 'rkrow' + (rank === 1 ? ' top1' : '');
+  fillRankRow(row, p, rank, isMe);
+  return row;
+}
+function fillRankRow(row, p, rank, isMe) {
+  row.classList.toggle('isvip', Boolean(p.vip));
+  const rk = document.createElement('div'); rk.className = 'rk';
+  rk.textContent = rank && rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : (rank || '–');
+  const ava = document.createElement('div'); ava.className = 'ava'; plAvatar(ava, p);
+  const nm = document.createElement('div'); nm.className = 'nm';
+  const b = document.createElement('b'); b.textContent = (p.vip ? '👑 ' : '') + p.name;
+  nm.appendChild(b);
+  if (isMe) { const s = document.createElement('small'); s.textContent = t('rkYou'); nm.appendChild(s); }
+  const sc = document.createElement('div'); sc.className = 'sc'; sc.textContent = p.v + ' ⭐';
+  row.appendChild(rk); row.appendChild(ava); row.appendChild(nm); row.appendChild(sc);
+}
+
+/* ---------- VIP ---------- */
+function refLink() {
+  const id = S.me ? S.me.id : '';
+  return S.app ? `https://t.me/${S.bot}/${S.app}?startapp=ref_${id}` : `https://t.me/${S.bot}?startapp=ref_${id}`;
+}
+function renderVip() {
+  const info = S.info || { vip: false, refs: 0, need: 7 };
+  $('vipCard').classList.toggle('on', Boolean(info.vip));
+  $('vipH').textContent = info.vip ? '👑 ' + t('vipActive') : t('vipLocked');
+  $('vipP').textContent = info.vip ? t('vipActiveP') : t('vipLockedP');
+  $('vipBar').innerHTML = Array.from({ length: info.need || 7 }, (_, i) => `<i class="${i < info.refs ? 'on' : ''}"></i>`).join('');
+  $('vipCnt').textContent = t('vipProg').replace('{n}', Math.min(info.refs, info.need || 7)).replace('{m}', info.need || 7);
+  const perks = [['👁', 'vp1'], ['💬', 'vp2'], ['🎲', 'vp3'], ['👑', 'vp4']];
+  $('vipPerks').innerHTML = perks.map(p => `<li><i>${p[0]}</i><div><b>${t(p[1])}</b><span>${t(p[1] + 'd')}</span></div></li>`).join('');
+}
+$('btnVipInv').onclick = () => {
+  if (!S.bot || S.bot === 'YOUR_BOT_USERNAME') return toast(t('noBot'));
+  const url = 'https://t.me/share/url?url=' + encodeURIComponent(refLink()) + '&text=' + encodeURIComponent(t('refText'));
+  if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+};
+
+/* ---------- Дүкен ---------- */
+function previewSVG(id) {
+  const d = SKINS[id];
+  let defs = `<linearGradient id="${id}_p" x1="0" y1="0" x2="1" y2="0">${pinStops(id)}</linearGradient>`;
+  let body = '';
+  for (let c = 0; c < 4; c++) {
+    defs += `<radialGradient id="${id}_h${c}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${CL[c]}"/><stop offset=".55" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></radialGradient>`;
+    body += `<g transform="translate(${c * 1.15},0)"><ellipse cy="0" rx=".34" ry=".08" fill="#000" opacity=".18"/>` +
+      `<path d="${PIN}" fill="url(#${id}_p)" stroke="${d.stroke}" stroke-width=".035"/>` +
+      headShape(id, `url(#${id}_h${c})`, CD[c]) +
+      '<ellipse cx="-.08" cy="-.75" rx=".09" ry=".05" fill="#fff" fill-opacity=".65" transform="rotate(-30 -.08 -.75)"/></g>';
+  }
+  return `<svg viewBox="-.55 -1.15 4.45 1.3" aria-hidden="true"><defs>${defs}</defs>${body}</svg>`;
+}
+function renderShop() {
+  const info = S.info || { skins: [], vip: false, skin: 'classic' };
+  $('shopVip').classList.toggle('hidden', !info.vip);
+  const box = $('shopGrid');
+  box.innerHTML = '';
+  const cat = S.catalog.length ? S.catalog : SKIN_IDS.map(id => ({ id, price: id === 'classic' ? 0 : FPRICE, stickers: [] }));
+  cat.forEach(sk => {
+    const d = SKINS[sk.id];
+    if (!d) return;
+    const owned = sk.id === 'classic' || info.vip || (info.skins || []).includes(sk.id);
+    const cur = (info.skin || 'classic') === sk.id;
+    const card = document.createElement('div');
+    card.className = 'sk' + (cur ? ' eq' : '');
+    card.style.setProperty('--diebg', d.bg); card.style.setProperty('--pip', d.pip);
+    const pips = [0, 2, 3, 5, 6, 8].map(i => i); // 6 нүкте
+    card.innerHTML = `<div class="pv">${previewSVG(sk.id)}<div class="dmini">${Array.from({ length: 9 }, (_, i) => `<i class="${pips.includes(i) ? 'on' : ''}"></i>`).join('')}</div></div>` +
+      `<h4></h4><p></p>` + (sk.stickers && sk.stickers.length ? `<div class="stks">+ 4 ${t('stkInter')}</div><div class="stk4">${sk.stickers.map(e => `<span>${e}</span>`).join('')}</div>` : '<div class="stk4"></div>');
+    card.querySelector('h4').textContent = t('sk_' + sk.id);
+    card.querySelector('p').textContent = t('sk_' + sk.id + '_d');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    if (cur) { btn.className = 'cur'; btn.textContent = '✓ ' + t('equipped'); btn.disabled = true; }
+    else if (owned) {
+      btn.className = info.vip && sk.id !== 'classic' && !(info.skins || []).includes(sk.id) ? 'vipopen' : 'own';
+      btn.textContent = btn.className === 'vipopen' ? '👑 ' + t('equip') : t('equip');
+      btn.onclick = () => { send({ t: 'skin_set', id: sk.id }); };
+    } else {
+      btn.textContent = '⭐ ' + (sk.price || FPRICE);
+      btn.onclick = () => { btn.disabled = true; send({ t: 'shop_buy', id: sk.id }); setTimeout(() => { btn.disabled = false; }, 2500); };
+    }
+    card.appendChild(btn);
+    box.appendChild(card);
+  });
+}
+function openInvoice(m) {
+  if (tg && tg.openInvoice) {
+    tg.openInvoice(m.url, st => { if (st === 'paid') { toast(t('paid')); haptic('success'); send({ t: 'me_get' }); } });
+  } else window.open(m.url, '_blank');
+}
+
+/* ---------- Ойын: орындар, медальдар, финиш экраны ---------- */
+const mineSeat = g => g && S.me ? g.seats.find(s => s.id === S.me.id) : null;
+const isDone = () => Boolean(S.game && (S.game.spectator || (mineSeat(S.game) && mineSeat(S.game).place != null)));
+const placeLabel = s => MEDAL(s.place) + (s.pts ? ' +' + s.pts : '');
+function applySkinVars(el, id) { const d = SKINS[skinKey(id)]; el.style.setProperty('--diebg', d.bg); el.style.setProperty('--pip', d.pip); }
+function renderMedals(g) {
+  let h = '';
+  g.seats.forEach(s => {
+    if (s.place == null) return;
+    const cx = ZONES[s.color][0] + 3, cy = ZONES[s.color][1] + 3, n = Math.min(4, s.place);
+    h += `<g transform="translate(${cx} ${cy})"><polygon points="-.55,-1.25 -.05,-.1 -.75,-.15" fill="#c0392b"/><polygon points=".55,-1.25 .05,-.1 .75,-.15" fill="#2c6fd1"/>` +
+      `<circle r="1.02" cy=".35" fill="url(#mg${n})" stroke="rgba(0,0,0,.45)" stroke-width=".06"/><circle r=".78" cy=".35" fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".05"/>` +
+      `<text y=".83" text-anchor="middle" font-size="1.35" font-weight="900" font-family="system-ui,sans-serif" fill="rgba(0,0,0,.65)">${s.place}</text></g>`;
+  });
+  const el = $('medals');
+  if (el && el.dataset.k !== h) { el.dataset.k = h; el.innerHTML = h; }
+}
+function renderOver(g) {
+  const w = g.seats.find(s => s.color === g.winner);
+  $('oName').textContent = w ? '🏆 ' + (w.id === S.me.id ? t('you') : w.name) : '';
+  $('oName').style.color = C[g.winner];
+  const mine = mineSeat(g), om = $('oMine');
+  if (mine && mine.place != null && !g.spectator) {
+    om.classList.remove('hidden');
+    om.textContent = MEDAL(mine.place) + ' ' + t('placeN').replace('{n}', mine.place) + (mine.pts ? ' · ' + t('finPts').replace('{n}', mine.pts) : '');
+  } else om.classList.add('hidden');
+  const rows = g.seats.slice().sort((a, b) => (a.place == null ? 99 : a.place) - (b.place == null ? 99 : b.place));
+  $('oList').innerHTML = '';
+  rows.forEach(s => {
+    const r = document.createElement('div'); r.className = 'orow' + (mine && s.id === mine.id ? ' me' : '');
+    const md = document.createElement('span'); md.className = 'md'; md.textContent = s.place != null ? MEDAL(s.place) : '🚪';
+    const nn = document.createElement('span'); nn.className = 'nn'; nn.textContent = s.id === S.me.id ? t('you') : s.name;
+    const pp = document.createElement('span'); pp.className = 'pp'; pp.textContent = g.ranked && s.pts ? '+' + s.pts : '';
+    r.appendChild(md); r.appendChild(nn); r.appendChild(pp); $('oList').appendChild(r);
+  });
+}
+function checkFin(g, mine) {
+  if (!mine || mine.place == null || S.finFor === g.id || g.spectator) return;
+  S.finFor = g.id;
+  const show = () => {
+    if (!S.game || S.game.id !== g.id) return;
+    $('finMedal').textContent = MEDAL(mine.place);
+    $('finTitle').textContent = mine.place === 1 ? t('finWin') : t('finPlace').replace('{n}', mine.place);
+    $('finPts').textContent = g.ranked && mine.pts ? t('finPts').replace('{n}', mine.pts) : '';
+    if (S.game.winner === null) $('fin').classList.remove('hidden');
+    haptic('success');
+  };
+  if (S.animating) setTimeout(show, 1800); else setTimeout(show, 400);
+}
+$('finWatch').onclick = () => $('fin').classList.add('hidden');
+$('finMenu').onclick = () => { $('fin').classList.add('hidden'); send({ t: 'leave' }); S.game = null; show('menu'); };
+
+/* ---------- Стикерлер ---------- */
+function updStk(g, mine) {
+  const btn = $('btnStk');
+  const list = mine && !g.spectator && g.winner === null && !mine.left ? ((S.catalog.find(x => x.id === mine.skin) || {}).stickers || []) : [];
+  btn.classList.toggle('hidden', !list.length);
+  if (!list.length) { $('stk').classList.add('hidden'); return; }
+  btn.firstChild.textContent = list[0];
+  const key = list.join('');
+  if ($('stk').dataset.k !== key) {
+    $('stk').dataset.k = key;
+    $('stk').innerHTML = list.map((e, i) => `<button type="button" data-k="${i}">${e}</button>`).join('');
+    $('stk').querySelectorAll('button').forEach(b => { b.onclick = () => { send({ t: 'sticker', k: Number(b.dataset.k) }); $('stk').classList.add('hidden'); }; });
+  }
+}
+$('btnStk').onclick = () => $('stk').classList.toggle('hidden');
+function popSticker(color, e) {
+  const card = $('card' + color);
+  if (!card) return;
+  const r = card.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'stkpop'; el.textContent = e;
+  el.style.left = (r.left + r.width / 2) + 'px'; el.style.top = (r.top + r.height / 2) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+/* ---------- Сынақ көрінісі: ?mock=menu|rating|vip|shop|game|fin|over (серверсіз макет) ---------- */
+function mockInit() {
+  const mode = qs.get('mock');
+  const names = ['Айгазы', 'Miyirman Utepov', 'Hasil', 'Quruvçi', 'K.K.Dauranbai', 'Aibek', 'Dana', 'Timur'];
+  const vip = qs.get('vip') === '1';
+  const cat = [['classic', []], ['obsidian', ['💣', '✴️', '👻', '⛈️']], ['gold', ['💰', '🔨', '🧲', '🍾']], ['crystal', ['💎', '💘', '🌈', '💠']], ['fire', ['🔥', '☄️', '🌋', '🧨']], ['ice', ['❄️', '⛄', '🧊', '🌨️']], ['neon', ['👾', '🚀', '🛸', '🪐']]]
+    .map(a => ({ id: a[0], price: a[0] === 'classic' ? 0 : FPRICE, stickers: a[1] }));
+  onMsg({ t: 'hello', me: { id: '7', name: 'Sen (7)', avatar: null }, bot: 'ludomilliybot', app: '', dnd: false, catalog: cat,
+    info: { t: 'me', vip, refs: vip ? 7 : 3, need: 7, pts: 85, wpts: 40, wins: 6, games: 21, skin: vip ? 'gold' : 'classic', skins: vip ? [] : ['obsidian'] } });
+  S.rank.week = { t: 'rank', scope: 'week', resetMs: 4 * 864e5 + 21 * 36e5, at: Date.now(), me: { rank: 98, v: 40 },
+    list: names.map((n, i) => ({ id: 'm' + i, name: n, avatar: null, vip: i === 0 || i === 3, v: 370 - i * 38 })) };
+  S.rank.all = S.rank.week;
+  if (mode === 'rating') show('rating');
+  else if (mode === 'vip') show('vip');
+  else if (mode === 'shop') show('shop');
+  else if (mode === 'game' || mode === 'fin' || mode === 'over') {
+    const seats = [0, 1, 2, 3].map(c => ({ color: c, id: c === 3 ? '7' : 'm' + c, name: names[c], avatar: null, auto: false, left: false, lives: 3, dice: 1 + c * 2 % 6,
+      place: mode === 'game' ? (c === 0 ? 1 : null) : [1, 3, 2, 4][c], pts: mode === 'game' ? (c === 0 ? 15 : 0) : [15, 5, 10, 0][c],
+      skin: ['gold', 'obsidian', 'crystal', 'classic'][c], vip: c === 0 }));
+    if (mode === 'fin') { seats[3].place = 1; seats[3].pts = 15; seats[0].place = null; seats[0].pts = 0; seats[3].skin = 'crystal'; }
+    const tokens = [[56, 56, 56, 56], [12, 30, -1, 5], [20, 44, 51, -1], [3, 17, 33, 49]];
+    S.me.id = '7';
+    onMsg({ t: 'game', spectator: false, viewers: 0, id: 'mock', seats, tokens, turn: 3, phase: 'roll', dice: null, rollSeq: 0, rollColor: null, moveSeq: 0, legal: [],
+      ms: 20000, winner: mode === 'over' ? 0 : null, reason: null, last: null, ranked: true });
+  }
+}
+
+let pendingRef = (qs.get('ref') || '').replace(/\D/g, '');
+{ const sp = readStartParam(); if (/^ref_\d+$/i.test(sp)) pendingRef = sp.slice(4); }
 
 buildBoard();
 applyI18n();
