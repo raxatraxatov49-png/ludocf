@@ -65,13 +65,16 @@ async function loadProfiles() {
     const m = await CF.listNow('p:');
     for (const [, p] of m) if (p && p.id) profiles.set(String(p.id), p);
   } catch (e) { console.error('profiles load:', e && e.message); }
+  await loadCfg();
 }
 function touchProfile(u, seenNow) {
   let p = profiles.get(u.id);
   const now = Date.now();
-  const changed = !p || p.name !== u.name || (p.avatar || null) !== (u.avatar || null);
+  let changed = !p || p.name !== u.name || (p.avatar || null) !== (u.avatar || null);
   if (!p) { p = { id: u.id, name: u.name, avatar: u.avatar || null, seen: now, dnd: false, created: now }; profiles.set(u.id, p); }
   p.name = u.name; p.avatar = u.avatar || null;
+  const un = String(u.username || '').toLowerCase();
+  if (un && p.username !== un) { p.username = un; changed = true; }
   if (seenNow) p.seen = now;
   if (changed || seenNow) { playersBaseAt = 0; saveProfile(p); }
   return p;
@@ -461,6 +464,7 @@ function nextTurn(g) {
 
 // Статистика: ойын саны мен жеңіс (Durable Object сақтауында)
 function recordStats(g, color) {
+  stats.games++; saveCfg();
   g.seats.forEach(s => {
     const p = profiles.get(s.uid);
     if (!p) return;
@@ -556,6 +560,7 @@ function playersBaseList() {
   if (playersBase && now - playersBaseAt < 2000) return playersBase;
   const list = [];
   for (const [id, p] of profiles) {
+    if (p.blocked) continue;
     const u = users.get(id);
     const on = isOnline(u);
     const busy = on && activeGame(u);
@@ -763,10 +768,15 @@ function onAuth(ws, m) {
     return ws.close();
   }
   info.id = String(info.id);
+  const bp = profiles.get(info.id);
+  if (bp && bp.blocked && !isAdmin(info.id)) {   // блокталған: мини апп ашылмайды
+    try { ws.send(JSON.stringify({ t: 'blocked' })); } catch (e) { /* жабылған */ }
+    return ws.close();
+  }
   let u = users.get(info.id);
   if (u && u.ws && u.ws !== ws) { send(u, { t: 'replaced' }); u.ws.close(); }
   if (!u) { u = { id: info.id, game: null, ws: null }; users.set(info.id, u); }
-  u.name = info.name; u.avatar = info.avatar || null; u.ws = ws;
+  u.name = info.name; u.avatar = info.avatar || null; u.username = info.username || ''; u.ws = ws;
   ws.user = u;
   const prof = touchProfile(u, true);
   send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME, app: MINI_APP_SHORT, dnd: Boolean(prof.dnd), catalog: SK.SKINS, info: meInfo(prof) });
@@ -867,12 +877,24 @@ async function handleUpdate(update) {
     await tgApi('answerPreCheckoutQuery', ok ? { pre_checkout_query_id: pq.id, ok: true } : { pre_checkout_query_id: pq.id, ok: false, error_message: 'Order is not available' });
     return;
   }
+  if (update && update.callback_query) return adminCb(update.callback_query);
   const msg = update && update.message;
   const sp = msg && msg.successful_payment;
   if (sp) {
     const id = parsePay(sp.invoice_payload, msg.from && msg.from.id);
     if (id && sp.currency === 'XTR') grantSkin(String(msg.from.id), id, sp.telegram_payment_charge_id);
     return;
+  }
+  if (msg && msg.from && msg.chat && msg.chat.type === 'private') {
+    const bu = touchBotUser(msg.from);
+    const fid = String(msg.from.id);
+    const acmd = typeof msg.text === 'string' ? (msg.text.match(/^\/(\w+)/) || [])[1] : '';
+    if (isAdmin(fid)) {
+      if (acmd === 'admin') { await showMenu(msg.chat.id, fid); return; }
+      if (acmd) adminState.delete(fid);
+      else if (await adminMsg(msg)) return;
+    }
+    if (bu && bu.blocked && !isAdmin(fid)) return;   // блокталған: жауап берілмейді
   }
   if (!msg || typeof msg.text !== 'string') return;
   const cmd = (msg.text.match(/^\/(\w+)/) || [])[1];
@@ -901,9 +923,267 @@ async function setupTelegram() {
     for (const code of ['uz', 'ru']) {
       await tgApi('setMyCommands', { commands: cmds(code), language_code: code });
     }
-    const r = await tgApi('setWebhook', { url: WEBHOOK_URL, secret_token: WEBHOOK_SECRET, allowed_updates: ['message', 'pre_checkout_query'] });
+    const r = await tgApi('setWebhook', { url: WEBHOOK_URL, secret_token: WEBHOOK_SECRET, allowed_updates: ['message', 'pre_checkout_query', 'callback_query'] });
     console.log('Telegram webhook:', r.description);
   } catch (e) { console.error('Telegram баптау қатесі:', e && e.message); }
+}
+
+/* ================= Админ панель (/admin) ================= */
+
+const MAIN_ADMIN = '8032280418';          // бас админ (өзгертуге және өшіруге болмайды)
+let adminIds = [];                         // қосымша админдер
+const stats = { games: 0 };                // барлық ойналған ойын саны
+const adminState = new Map();              // adminId -> { step, ... }
+let broadcasting = false;
+
+const isMain = id => String(id) === MAIN_ADMIN;
+const isAdmin = id => isMain(id) || adminIds.includes(String(id));
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const realId = id => /^\d+$/.test(String(id));
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function saveCfg() {
+  try {
+    if (!CF.putNow) return;
+    Promise.resolve(CF.putNow('cfg:admins', adminIds)).catch(() => {});
+    Promise.resolve(CF.putNow('cfg:stats', stats)).catch(() => {});
+  } catch (e) { /* сақтау қатесі ойынды тоқтатпайды */ }
+}
+async function loadCfg() {
+  try {
+    if (!CF.listNow) return;
+    const m = await CF.listNow('cfg:');
+    const a = m.get('cfg:admins');
+    if (Array.isArray(a)) adminIds = a.map(String);
+    const s = m.get('cfg:stats');
+    if (s && Number.isFinite(s.games)) stats.games = s.games;
+  } catch (e) { console.error('cfg load:', e && e.message); }
+}
+
+const L10 = {
+  blocked: { kk: '🚫 Сіз блокталдыңыз. Ботты пайдалану мүмкін емес.', uz: '🚫 Siz bloklandingiz. Botdan foydalana olmaysiz.', ru: '🚫 Вы заблокированы. Использование бота недоступно.' },
+  unblocked: { kk: '✅ Блок алынды. Қайта ойнай аласыз.', uz: '✅ Blok olib tashlandi. Qayta o‘ynashingiz mumkin.', ru: '✅ Блокировка снята. Можно играть снова.' },
+  vip: { kk: n => `👑 Сізге ${n} күнге VIP берілді!`, uz: n => `👑 Sizga ${n} kunlik VIP berildi!`, ru: n => `👑 Вам выдан VIP на ${n} дн.!` }
+};
+const langOf = p => (p && L10.blocked[p.lang] ? p.lang : 'kk');
+
+function findUser(q) {
+  q = String(q || '').trim().replace(/^https?:\/\/t\.me\//i, '').replace(/^@/, '').trim();
+  if (!q) return null;
+  if (/^\d+$/.test(q)) return profiles.get(q) || null;
+  q = q.toLowerCase();
+  for (const p of profiles.values()) if (p.username && p.username === q) return p;
+  return null;
+}
+const label = p => `<b>${esc(p.name || '—')}</b>${p.username ? ' @' + esc(p.username) : ''} (<code>${p.id}</code>)`;
+
+// Ботқа жазған әр адамды профильге қосады (статистика үшін), username мен тілді сақтайды
+function touchBotUser(from) {
+  if (!from || !from.id) return null;
+  const id = String(from.id), now = Date.now();
+  const name = [from.first_name, from.last_name].filter(Boolean).join(' ') || from.username || 'Player';
+  let p = profiles.get(id), changed = false;
+  if (!p) { p = { id, name: name.slice(0, 40), avatar: null, seen: now, dnd: false, created: now }; profiles.set(id, p); changed = true; }
+  const un = String(from.username || '').toLowerCase();
+  if (un !== (p.username || '')) { p.username = un; changed = true; }
+  const lg = String(from.language_code || '').slice(0, 2).toLowerCase();
+  if (L10.blocked[lg] && p.lang !== lg) { p.lang = lg; changed = true; }
+  if (changed) { playersBaseAt = 0; saveProfile(p); }
+  return p;
+}
+
+function blockUser(p) {
+  p.blocked = true;
+  saveProfile(p);
+  playersBaseAt = 0;
+  const u = users.get(p.id);
+  if (u) {
+    try { unwatch(u); leaveQueue(u, true); leaveRoom(u, true); clearPInvitesOf(u.id); leaveGame(u); } catch (e) { /* ештеңе етпейді */ }
+    send(u, { t: 'blocked' });
+    try { if (u.ws) u.ws.close(); } catch (e) { /* жабылып қойған */ }
+  }
+  tgApi('sendMessage', { chat_id: p.id, text: L10.blocked[langOf(p)] }).catch(() => {});
+}
+function unblockUser(p) {
+  delete p.blocked;
+  saveProfile(p);
+  playersBaseAt = 0;
+  tgApi('sendMessage', { chat_id: p.id, text: L10.unblocked[langOf(p)] }).catch(() => {});
+}
+function giveVip(p, days) {
+  p.vipUntil = Math.max(Date.now(), p.vipUntil || 0) + days * DAY_MS;
+  p.refs = [];
+  saveProfile(p);
+  sendMe(p.id);
+  tgApi('sendMessage', { chat_id: p.id, text: L10.vip[langOf(p)](days) }).catch(() => {});
+}
+
+function statsText() {
+  const now = Date.now();
+  const startToday = Math.floor((now + 5 * 3600000) / DAY_MS) * DAY_MS - 5 * 3600000;   // UTC+5 бойынша «бүгін»
+  let total = 0, today = 0, vip = 0, blocked = 0, online = 0;
+  for (const p of profiles.values()) {
+    if (!realId(p.id)) continue;
+    total++;
+    if (p.created && p.created >= startToday) today++;
+    if (isVip(p)) vip++;
+    if (p.blocked) blocked++;
+  }
+  for (const u of users.values()) if (isOnline(u) && realId(u.id)) online++;
+  let live = 0;
+  for (const g of games.values()) if (g.winner === null) live++;
+  return '📊 <b>Статистика</b>\n\n'
+    + `👥 Барлық пайдаланушылар: <b>${total}</b>\n`
+    + `🆕 Бүгін қосылғандар: <b>${today}</b>\n`
+    + `🟢 Қазір онлайн: <b>${online}</b>\n`
+    + `👑 VIP: <b>${vip}</b>\n`
+    + `🚫 Блокталғандар: <b>${blocked}</b>\n\n`
+    + `🎮 Қазір жүріп жатқан ойындар: <b>${live}</b>\n`
+    + `🏁 Барлығы ойналған ойындар: <b>${stats.games}</b>`;
+}
+
+const BACK = { inline_keyboard: [[{ text: '⬅️ Артқа', callback_data: 'a:menu' }]] };
+const adminMenu = id => ({
+  inline_keyboard: [
+    [{ text: '📊 Статистика', callback_data: 'a:stats' }],
+    [{ text: '🚫 Блоктау', callback_data: 'a:block' }, { text: '✅ Блоктан шығару', callback_data: 'a:unblock' }],
+    [{ text: '👑 VIP беру', callback_data: 'a:vip' }],
+    [{ text: '📢 Хабарлама жіберу', callback_data: 'a:bc' }]
+  ].concat(isMain(id) ? [[{ text: '👮 Админдерді басқару', callback_data: 'a:admins' }]] : [])
+});
+const say = (chat, text, kb) => tgApi('sendMessage', { chat_id: chat, text, parse_mode: 'HTML', reply_markup: kb || undefined });
+const showMenu = (chat, id) => { adminState.delete(String(id)); return say(chat, '🛠 <b>Админ панель</b>\nБөлімді таңдаңыз:', adminMenu(id)); };
+
+async function adminsScreen(chat) {
+  const list = adminIds.length ? adminIds.map(i => { const p = profiles.get(i); return '• ' + (p ? label(p) : `<code>${i}</code>`); }).join('\n') : 'Қосымша админ жоқ';
+  return say(chat, `👮 <b>Админдер</b>\n\n⭐ Бас админ: <code>${MAIN_ADMIN}</code>\n\n${list}`, {
+    inline_keyboard: [[{ text: '➕ Админ қосу', callback_data: 'a:adm_add' }, { text: '➖ Админді өшіру', callback_data: 'a:adm_del' }], [{ text: '⬅️ Артқа', callback_data: 'a:menu' }]]
+  });
+}
+
+async function adminCb(cb) {
+  const from = String(cb.from && cb.from.id);
+  const chat = cb.message && cb.message.chat && cb.message.chat.id;
+  tgApi('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => {});
+  if (!chat || !isAdmin(from)) return;
+  const d = String(cb.data || '');
+  const ask = (step, text) => { adminState.set(from, { step }); return say(chat, text, BACK); };
+  switch (d) {
+    case 'a:menu': return showMenu(chat, from);
+    case 'a:stats': adminState.delete(from); return say(chat, statsText(), BACK);
+    case 'a:block': return ask('block', '🚫 Блоктау\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
+    case 'a:unblock': return ask('unblock', '✅ Блоктан шығару\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
+    case 'a:vip': return ask('vip_user', '👑 VIP беру\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
+    case 'a:bc': return ask('bc_content', '📢 <b>Хабарлама жіберу</b>\n\nБарлық пайдаланушыларға жіберілетін хабарламаны жіберіңіз: мәтін, сілтеме немесе сурет (жазуымен).');
+    case 'a:bc_go': {
+      const st = adminState.get(from);
+      if (!st || st.step !== 'bc_confirm') return;
+      adminState.delete(from);
+      if (broadcasting) return say(chat, '⏳ Басқа хабарлама жіберіліп жатыр, күте тұрыңыз.', BACK);
+      runBroadcast(chat, st.chat, st.mid);
+      return;
+    }
+    case 'a:admins': if (!isMain(from)) return; adminState.delete(from); return adminsScreen(chat);
+    case 'a:adm_add': if (!isMain(from)) return; return ask('adm_add', '➕ Жаңа админнің Telegram <b>ID</b> нөмірін жіберіңіз:');
+    case 'a:adm_del': if (!isMain(from)) return; return ask('adm_del', '➖ Өшірілетін админнің <b>ID</b> нөмірін жіберіңіз:');
+  }
+}
+
+// Админнің қадамдық жауабын өңдейді. true қайтарса — хабарлама осында қолданылды.
+async function adminMsg(msg) {
+  const from = String(msg.from.id), chat = msg.chat.id;
+  const st = adminState.get(from);
+  if (!st) return false;
+  const text = String(msg.text || '').trim();
+
+  if (st.step === 'bc_content') {
+    st.step = 'bc_confirm'; st.chat = chat; st.mid = msg.message_id;
+    let n = 0;
+    for (const p of profiles.values()) if (realId(p.id) && !p.blocked) n++;
+    await say(chat, '👆 Хабарлама осылай көрінеді.');
+    await tgApi('copyMessage', { chat_id: chat, from_chat_id: chat, message_id: msg.message_id });
+    await say(chat, `Барлығы <b>${n}</b> пайдаланушыға жіберілсін бе?`, {
+      inline_keyboard: [[{ text: '✅ Жіберу', callback_data: 'a:bc_go' }, { text: '❌ Бас тарту', callback_data: 'a:menu' }]]
+    });
+    return true;
+  }
+  if (st.step === 'adm_add' || st.step === 'adm_del') {
+    if (!isMain(from)) { adminState.delete(from); return true; }
+    if (!/^\d{4,15}$/.test(text)) { await say(chat, '❗ ID тек сан болуы керек. Қайта жіберіңіз:', BACK); return true; }
+    if (isMain(text)) { await say(chat, '⭐ Бұл — бас админ, өзгертуге болмайды.', BACK); return true; }
+    if (st.step === 'adm_add') {
+      if (!adminIds.includes(text)) adminIds.push(text);
+      saveCfg();
+      tgApi('sendMessage', { chat_id: text, text: '👮 Сізге админ құқығы берілді. Панельді ашу: /admin' }).catch(() => {});
+      await say(chat, `✅ <code>${text}</code> админ болып қосылды.`);
+    } else {
+      if (!adminIds.includes(text)) { await say(chat, '❗ Мұндай админ жоқ. Басқа ID жіберіңіз:', BACK); return true; }
+      adminIds = adminIds.filter(i => i !== text);
+      saveCfg();
+      tgApi('sendMessage', { chat_id: text, text: 'ℹ️ Админ құқығыңыз алынды.' }).catch(() => {});
+      await say(chat, `✅ <code>${text}</code> админдерден өшірілді.`);
+    }
+    adminState.delete(from);
+    return adminsScreen(chat).then(() => true);
+  }
+
+  // қалған қадамдар: пайдаланушыны ID / @username арқылы іздейді
+  if (st.step === 'block' || st.step === 'unblock' || st.step === 'vip_user') {
+    const p = findUser(text);
+    if (!p) { await say(chat, '❗ Пайдаланушы табылмады (ол ботқа кемінде бір рет кірген болуы керек). ID немесе @username қайта жіберіңіз:', BACK); return true; }
+    if (st.step === 'block') {
+      if (isAdmin(p.id)) { await say(chat, '❗ Админді блоктауға болмайды.', BACK); return true; }
+      blockUser(p);
+      adminState.delete(from);
+      await say(chat, `🚫 ${label(p)} блокталды.`);
+      await showMenu(chat, from);
+    } else if (st.step === 'unblock') {
+      unblockUser(p);
+      adminState.delete(from);
+      await say(chat, `✅ ${label(p)} блоктан шығарылды.`);
+      await showMenu(chat, from);
+    } else {
+      adminState.set(from, { step: 'vip_days', uid: p.id });
+      await say(chat, `👑 ${label(p)}\n\nНеше күнге VIP берілсін? (санды жазыңыз, мысалы: 7)`, BACK);
+    }
+    return true;
+  }
+  if (st.step === 'vip_days') {
+    const n = Number(text);
+    const p = profiles.get(st.uid);
+    if (!Number.isInteger(n) || n < 1 || n > 3650) { await say(chat, '❗ 1-ден 3650-ге дейінгі бүтін сан жазыңыз:', BACK); return true; }
+    if (!p) { adminState.delete(from); return true; }
+    giveVip(p, n);
+    adminState.delete(from);
+    await say(chat, `✅ ${label(p)} пайдаланушысына <b>${n}</b> күнге VIP берілді.`);
+    await showMenu(chat, from);
+    return true;
+  }
+  return false;
+}
+
+// Барлығына хабарлама: copyMessage — мәтін, сурет, сілтеме, форматтау бәрі сол күйінде барады
+async function runBroadcast(adminChat, fromChat, mid) {
+  broadcasting = true;
+  const ids = [];
+  for (const p of profiles.values()) if (realId(p.id) && !p.blocked) ids.push(p.id);
+  let ok = 0, fail = 0;
+  await say(adminChat, `📤 Жіберу басталды: ${ids.length} пайдаланушы…`);
+  try {
+    for (const id of ids) {
+      try {
+        let r = await tgApi('copyMessage', { chat_id: id, from_chat_id: fromChat, message_id: mid });
+        if (r && !r.ok && r.error_code === 429) {
+          await sleep(((r.parameters && r.parameters.retry_after) || 3) * 1000 + 200);
+          r = await tgApi('copyMessage', { chat_id: id, from_chat_id: fromChat, message_id: mid });
+        }
+        if (r && r.ok) ok++; else fail++;
+      } catch (e) { fail++; }
+      await sleep(50);   // секундына ~20 хабарлама (Telegram шегінен төмен)
+    }
+  } finally { broadcasting = false; }
+  await say(adminChat, `✅ Хабарлама жіберілді.\n\n📬 Жеткізілді: <b>${ok}</b>\n⚠️ Жеткізілмеді: <b>${fail}</b> (ботты бұғаттағандар т.б.)`, adminMenu(adminChat));
 }
 
 const server = http.createServer(async (req, res) => {
