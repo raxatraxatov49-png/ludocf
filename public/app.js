@@ -79,9 +79,9 @@ const EXTRA2 = {
 };
 Object.keys(EXTRA2).forEach(l => Object.assign(I18N[l], EXTRA2[l]));
 const EXTRA3 = {
-  kk: { navGame: 'Ойын', navRank: 'Рейтинг', navShop: 'Дүкен', rkTitle: 'Рейтинг', rkWeek: 'Осы апта', rkAll: 'Барлық уақыт',
-    rkNoteWeek: '7 күн сайын нөлден басталады · жаңаруға {d} күн {h} сағ қалды', rkNoteAll: 'Барлық уақыттағы ұпайлар (кездейсоқ ойын)',
-    rkRulesT: '🏆 Ұпай жүйесі (тек кездейсоқ ойын)', rkRulesN: '1-орын · 2-орын · 3-орын · 4-орын', rkPlayers: 'ойыншы', rkYou: 'Сіздің орныңыз', rkEmpty: 'Әзірге ұпай жинағандар жоқ. Кездейсоқ ойында жеңіп, бірінші бол!',
+  kk: { navGame: 'Ойын', navShop: 'Дүкен',
+   
+   
     vipLocked: 'VIP ал', vipLockedP: '7 досыңды шақыр — VIP тегін ашылады', vipActive: 'VIP белсенді', vipActiveP: 'Барлық мүмкіндіктер ашық. Профиліңіз алтын түсте көрінеді.',
     vipProg: '{n} / {m} дос шақырылды', vipInvite: 'Достарды шақыру', vipHow: 'Дос сілтеме арқылы ботқа бірінші рет кіргенде ғана есептеледі', vipUnlocked: '👑 VIP ашылды!', refText: 'Менімен Лудо ойнайық! 🎲',
     vipPerksT: 'VIP мүмкіндіктері',
@@ -94,9 +94,9 @@ const EXTRA3 = {
     overTitle: 'Ойын аяқталды', placeN: '{n}-орын', finWin: 'Сіз ұттыңыз! 🏆', finPlace: 'Сіз {n}-орын алдыңыз', finPts: '+{n} ұпай',
     finHint: 'Ойыннан шыға аласыз немесе қалғандарды қарап отыра аласыз', finWatch: 'Қарап отыру', finMenu: 'Бас мәзір',
     chatLocked: 'Ойынды көріп отырғанда чатты тек VIP ойыншылар көреді және жаза алады. 7 дос шақырып, VIP ал!', viewer: 'көрермен' },
-  uz: { navGame: 'O‘yin', navRank: 'Reyting', navShop: 'Do‘kon', rkTitle: 'Reyting', rkWeek: 'Shu hafta', rkAll: 'Barcha vaqt',
-    rkNoteWeek: 'Har 7 kunda noldan boshlanadi · yangilanishiga {d} kun {h} soat qoldi', rkNoteAll: 'Barcha vaqtdagi ochkolar (tasodifiy o‘yin)',
-    rkRulesT: '🏆 Ochko tizimi (faqat tasodifiy o‘yin)', rkRulesN: '1-o‘rin · 2-o‘rin · 3-o‘rin · 4-o‘rin', rkPlayers: 'o‘yinchi', rkYou: 'Sizning o‘rningiz', rkEmpty: 'Hozircha ochko to‘plaganlar yo‘q. Tasodifiy o‘yinda yutib, birinchi bo‘l!',
+  uz: { navGame: 'O‘yin', navShop: 'Do‘kon',
+   
+   
     vipLocked: 'VIP ol', vipLockedP: '7 do‘stingni taklif qil — VIP bepul ochiladi', vipActive: 'VIP faol', vipActiveP: 'Barcha imkoniyatlar ochiq. Profilingiz oltin rangda ko‘rinadi.',
     vipProg: '{n} / {m} do‘st taklif qilindi', vipInvite: 'Do‘stlarni taklif qilish', vipHow: 'Do‘st havola orqali botga birinchi marta kirgandagina hisoblanadi', vipUnlocked: '👑 VIP ochildi!', refText: 'Men bilan Ludo o‘ynaymiz! 🎲',
     vipPerksT: 'VIP imkoniyatlari',
@@ -109,9 +109,9 @@ const EXTRA3 = {
     overTitle: 'O‘yin tugadi', placeN: '{n}-o‘rin', finWin: 'Siz yutdingiz! 🏆', finPlace: 'Siz {n}-o‘rinni oldingiz', finPts: '+{n} ochko',
     finHint: 'O‘yindan chiqishingiz yoki qolganlarni tomosha qilishingiz mumkin', finWatch: 'Tomosha qilish', finMenu: 'Bosh menyu',
     chatLocked: 'O‘yinni tomosha qilganda chatni faqat VIP o‘yinchilar ko‘radi va yoza oladi. 7 do‘st taklif qilib, VIP ol!', viewer: 'tomoshabin' },
-  ru: { navGame: 'Игра', navRank: 'Рейтинг', navShop: 'Магазин', rkTitle: 'Рейтинг', rkWeek: 'Эта неделя', rkAll: 'Всё время',
-    rkNoteWeek: 'Каждые 7 дней начинается с нуля · до обновления {d} дн {h} ч', rkNoteAll: 'Очки за всё время (случайная игра)',
-    rkRulesT: '🏆 Система очков (только случайная игра)', rkRulesN: '1-е · 2-е · 3-е · 4-е место', rkPlayers: 'игрока', rkYou: 'Ваше место', rkEmpty: 'Пока никто не набрал очков. Выигрывай в случайной игре и стань первым!',
+  ru: { navGame: 'Игра', navShop: 'Магазин',
+   
+   
     vipLocked: 'Получи VIP', vipLockedP: 'Пригласи 7 друзей — VIP откроется бесплатно', vipActive: 'VIP активен', vipActiveP: 'Все возможности открыты. Ваш профиль выделен золотом.',
     vipProg: 'Приглашено {n} / {m}', vipInvite: 'Пригласить друзей', vipHow: 'Засчитывается, только если друг впервые зашёл в бота по вашей ссылке', vipUnlocked: '👑 VIP открыт!', refText: 'Сыграем в Лудо! 🎲',
     vipPerksT: 'Возможности VIP',
@@ -759,7 +759,6 @@ function onMsg(m) {
       showStats(m.wins, m.games);
       break;
     case 'me': applyMe(m); break;
-    case 'rank': m.at = Date.now(); S.rank[m.scope] = m; if (S.screen === 'rating') renderRank(); break;
     case 'invoice': openInvoice(m); break;
     case 'vip_unlocked': toast(t('vipUnlocked')); haptic('success'); break;
     case 'sticker': popSticker(m.color, m.e); break;
@@ -769,7 +768,7 @@ function onMsg(m) {
     case 'idle':
       S.room = null; S.queue = null; S.game = null; S.chat = []; S.unread = 0; updBadge(); $('chat').classList.add('hidden');
       $('over').classList.add('hidden'); $('fin').classList.add('hidden'); $('stk').classList.add('hidden');
-      if (!['players', 'rating', 'vip', 'shop'].includes(S.screen)) { show('menu'); reqPlayers(); }
+      if (!['players', 'vip', 'shop'].includes(S.screen)) { show('menu'); reqPlayers(); }
       break;
     case 'players':
       S.players = m; S.playersAt = Date.now(); S.dnd = m.dnd;
@@ -916,20 +915,19 @@ function headShape(sk, fill, stroke) {
 }
 
 /* ---------- Төменгі мәзір ---------- */
-const NAVS = ['menu', 'rating', 'vip', 'shop'];
+const NAVS = ['menu', 'vip', 'shop'];
 function updNav() {
   $('nav').classList.toggle('hidden', !NAVS.includes(S.screen));
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.go === S.screen));
 }
 function onScreen(id) {
-  if (id === 'rating') { reqRank(); renderRank(); }
   if (id === 'vip') { send({ t: 'me_get' }); renderVip(); }
   if (id === 'shop') { send({ t: 'me_get' }); renderShop(); }
 }
 document.querySelectorAll('#nav button').forEach(b => { b.onclick = () => show(b.dataset.go); });
 
 /* ---------- Профиль / ұпай ақпараты ---------- */
-S.info = null; S.catalog = []; S.rank = {}; S.rankScope = 'week'; S.finFor = null;
+S.info = null; S.catalog = []; S.finFor = null;
 function applyMe(info) {
   if (!info) return;
   S.info = info;
@@ -937,53 +935,8 @@ function applyMe(info) {
   const ring = $('meRing');
   if (ring) ring.classList.toggle('novip', !info.vip);
   $('meName').classList.toggle('gold', Boolean(info.vip));
-  if (S.screen === 'rating') renderRank();
   if (S.screen === 'vip') renderVip();
   if (S.screen === 'shop') renderShop();
-}
-
-/* ---------- Рейтинг ---------- */
-function reqRank() { send({ t: 'rank_get', scope: S.rankScope }); }
-document.querySelectorAll('#rkTabs button').forEach(b => {
-  b.onclick = () => { S.rankScope = b.dataset.scope; reqRank(); renderRank(); };
-});
-function renderRank() {
-  document.querySelectorAll('#rkTabs button').forEach(b => b.classList.toggle('on', b.dataset.scope === S.rankScope));
-  const d = S.rank[S.rankScope];
-  $('rkMy').textContent = '⭐ ' + (S.info ? (S.rankScope === 'week' ? S.info.wpts : S.info.pts) : 0);
-  const rules = [[4, '15 · 10 · 5 · 0'], [3, '15 · 10 · 0'], [2, '10 · 5']];
-  $('rkRules').innerHTML = rules.map(r => `<div>${r[0]} ${t('rkPlayers')}<b>${r[1]}</b></div>`).join('');
-  if (S.rankScope === 'week') {
-    const ms = d ? Math.max(0, d.resetMs - (Date.now() - d.at)) : 0;
-    $('rkNote').textContent = t('rkNoteWeek').replace('{d}', Math.floor(ms / 864e5)).replace('{h}', Math.floor(ms % 864e5 / 36e5));
-  } else $('rkNote').textContent = t('rkNoteAll');
-  const box = $('rkList');
-  box.innerHTML = '';
-  if (!d) return;
-  if (!d.list.length) { const e = document.createElement('div'); e.className = 'rkempty'; e.textContent = t('rkEmpty'); box.appendChild(e); }
-  d.list.forEach((p, i) => box.appendChild(rankRow(p, i + 1, p.id === (S.me && S.me.id))));
-  const me = $('rkMe');
-  me.classList.remove('hidden');
-  me.innerHTML = '';
-  fillRankRow(me, { id: S.me.id, name: S.me.name, avatar: S.me.avatar, vip: S.info && S.info.vip, v: d.me.v }, d.me.rank, true);
-}
-function rankRow(p, rank, isMe) {
-  const row = document.createElement('div');
-  row.className = 'rkrow' + (rank === 1 ? ' top1' : '');
-  fillRankRow(row, p, rank, isMe);
-  return row;
-}
-function fillRankRow(row, p, rank, isMe) {
-  row.classList.toggle('isvip', Boolean(p.vip));
-  const rk = document.createElement('div'); rk.className = 'rk';
-  rk.textContent = rank && rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : (rank || '–');
-  const ava = document.createElement('div'); ava.className = 'ava'; plAvatar(ava, p);
-  const nm = document.createElement('div'); nm.className = 'nm';
-  const b = document.createElement('b'); b.textContent = (p.vip ? '👑 ' : '') + p.name;
-  nm.appendChild(b);
-  if (isMe) { const s = document.createElement('small'); s.textContent = t('rkYou'); nm.appendChild(s); }
-  const sc = document.createElement('div'); sc.className = 'sc'; sc.textContent = p.v + ' ⭐';
-  row.appendChild(rk); row.appendChild(ava); row.appendChild(nm); row.appendChild(sc);
 }
 
 /* ---------- VIP ---------- */
@@ -1139,7 +1092,7 @@ function popSticker(color, e) {
   setTimeout(() => el.remove(), 2000);
 }
 
-/* ---------- Сынақ көрінісі: ?mock=menu|rating|vip|shop|game|fin|over (серверсіз макет) ---------- */
+/* ---------- Сынақ көрінісі: ?mock=menu|vip|shop|game|fin|over (серверсіз макет) ---------- */
 function mockInit() {
   const mode = qs.get('mock');
   const names = ['Айгазы', 'Miyirman Utepov', 'Hasil', 'Quruvçi', 'K.K.Dauranbai', 'Aibek', 'Dana', 'Timur'];
@@ -1147,12 +1100,8 @@ function mockInit() {
   const cat = [['classic', []], ['obsidian', ['💣', '✴️', '👻', '⛈️']], ['gold', ['💰', '🔨', '🧲', '🍾']], ['crystal', ['💎', '💘', '🌈', '💠']], ['fire', ['🔥', '☄️', '🌋', '🧨']], ['ice', ['❄️', '⛄', '🧊', '🌨️']], ['neon', ['👾', '🚀', '🛸', '🪐']]]
     .map(a => ({ id: a[0], price: a[0] === 'classic' ? 0 : FPRICE, stickers: a[1] }));
   onMsg({ t: 'hello', me: { id: '7', name: 'Sen (7)', avatar: null }, bot: 'ludomilliybot', app: '', dnd: false, catalog: cat,
-    info: { t: 'me', vip, refs: vip ? 7 : 3, need: 7, pts: 85, wpts: 40, wins: 6, games: 21, skin: vip ? 'gold' : 'classic', skins: vip ? [] : ['obsidian'] } });
-  S.rank.week = { t: 'rank', scope: 'week', resetMs: 4 * 864e5 + 21 * 36e5, at: Date.now(), me: { rank: 98, v: 40 },
-    list: names.map((n, i) => ({ id: 'm' + i, name: n, avatar: null, vip: i === 0 || i === 3, v: 370 - i * 38 })) };
-  S.rank.all = S.rank.week;
-  if (mode === 'rating') show('rating');
-  else if (mode === 'vip') show('vip');
+    info: { t: 'me', vip, refs: vip ? 7 : 3, need: 7, pts: 85, wins: 6, games: 21, skin: vip ? 'gold' : 'classic', skins: vip ? [] : ['obsidian'] } });
+  if (mode === 'vip') show('vip');
   else if (mode === 'shop') show('shop');
   else if (mode === 'game' || mode === 'fin' || mode === 'over') {
     const seats = [0, 1, 2, 3].map(c => ({ color: c, id: c === 3 ? '7' : 'm' + c, name: names[c], avatar: null, auto: false, left: false, lives: 3, dice: 1 + c * 2 % 6,
