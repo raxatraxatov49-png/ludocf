@@ -13,21 +13,21 @@ const qs = new URLSearchParams(location.search);
 
 /* ---------- Тіл ---------- */
 const I18N = {
-  kk: { leftMark: 'Шықты', kicked: 'Жаның таусылды, ойыннан шығарылдың', role: 'Лудо ойыншысы', randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
+  kk: { lastSeen: 'соңғы кіру', justNow: 'жаңа ғана', leftMark: 'Шықты', kicked: 'Жаның таусылды, ойыннан шығарылдың', role: 'Лудо ойыншысы', randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
     friendTitle: 'Доспен ойнау', friendDesc: 'Бөлме аш та, достарыңды шақыр', friendBtn: 'ДОСПЕН ОЙНАУ', connecting: 'Қосылуда…',
     waiting: 'Ойыншылар күтілуде', you: 'Сіз', invite: 'Шақыру', startGame: 'Ойынды бастау', cancel: 'Бас тарту',
     winner: 'Жеңімпаз', toMenu: 'Мәзірге', leaveAsk: 'Ойыннан шығасың ба?', leave: 'Шығу', stay: 'Қалу',
     hintRoll: 'Сенің кезегің — сүйекті бас', hintMove: 'Фишканы таңда', hintOther: 'жүріс жасауда…',
     inviteText: 'Менімен Лудо ойнайық! 🎲', room_gone: 'Бөлме табылмады', room_full: 'Бөлме толы', auth: 'Кіру қатесі',
     replaced: 'Басқа құрылғыда ашылды', noBot: 'Боттың username-і көрсетілмеген' },
-  uz: { leftMark: 'Chiqdi', kicked: 'Jonlaring tugadi, o‘yindan chiqarilding', role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
+  uz: { lastSeen: 'oxirgi kirish', justNow: 'hozirgina', leftMark: 'Chiqdi', kicked: 'Jonlaring tugadi, o‘yindan chiqarilding', role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
     friendTitle: 'Do‘st bilan o‘ynash', friendDesc: 'Xona och va do‘stlaringni taklif qil', friendBtn: 'DO‘ST BILAN O‘YNASH', connecting: 'Ulanmoqda…',
     waiting: 'O‘yinchilar kutilmoqda', you: 'Siz', invite: 'Taklif qilish', startGame: 'O‘yinni boshlash', cancel: 'Bekor qilish',
     winner: 'G‘olib', toMenu: 'Menyuga', leaveAsk: 'O‘yindan chiqasanmi?', leave: 'Chiqish', stay: 'Qolish',
     hintRoll: 'Navbating — kubikni bos', hintMove: 'Toshni tanla', hintOther: 'yurmoqda…',
     inviteText: 'Men bilan Ludo o‘ynaymiz! 🎲', room_gone: 'Xona topilmadi', room_full: 'Xona to‘la', auth: 'Kirish xatosi',
     replaced: 'Boshqa qurilmada ochildi', noBot: 'Bot username ko‘rsatilmagan' },
-  ru: { leftMark: 'Вышел', kicked: 'Жизни закончились, вы выбыли из игры', role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
+  ru: { lastSeen: 'был(а)', justNow: 'только что', leftMark: 'Вышел', kicked: 'Жизни закончились, вы выбыли из игры', role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
     friendTitle: 'Играть с другом', friendDesc: 'Создай комнату и пригласи друзей', friendBtn: 'ИГРАТЬ С ДРУГОМ', connecting: 'Подключение…',
     waiting: 'Ожидание игроков', you: 'Вы', invite: 'Пригласить', startGame: 'Начать игру', cancel: 'Отмена',
     winner: 'Победитель', toMenu: 'В меню', leaveAsk: 'Выйти из игры?', leave: 'Выйти', stay: 'Остаться',
@@ -39,7 +39,7 @@ const I18N = {
 const EXTRA = {
   kk: { playersTitle: 'Ойыншылар', playersDesc: 'Барлық ойыншылар: онлайн және офлайн', playersBtn: 'ОЙЫНШЫЛАР',
     stOnline: 'онлайн', stGame: 'ойында', stOffline: 'офлайн', ago: 'бұрын', unitM: 'мин', unitH: 'сағ', unitD: 'күн',
-    plInvite: 'Шақыру', plSent: 'Күтілуде…', plWatch: 'Көру',
+    plInvite: 'Шақыру', plSent: 'Күтілуде…', plWatch: 'Ойынды қарау',
     dndHint: 'Ай белгісі: «Мазаламаңыз» режимі. Қосылғанда сізді ешкім шақыра алмайды.',
     dndNote: 'Мазаламаңыз қосулы. Сіз онлайн көрінесіз, бірақ ешкім сізді шақыра алмайды.',
     invText: 'сені Лудо ойнауға шақырады', accept: 'Қабылдау', decline: 'Бас тарту',
@@ -50,7 +50,7 @@ const EXTRA = {
     invExpired: 'Шақыру уақыты бітті', invUnavailable: 'Ойыншы қолжетімсіз' },
   uz: { playersTitle: 'O‘yinchilar', playersDesc: 'Barcha o‘yinchilar: onlayn va oflayn', playersBtn: 'O‘YINCHILAR',
     stOnline: 'onlayn', stGame: 'o‘yinda', stOffline: 'oflayn', ago: 'oldin', unitM: 'daq', unitH: 'soat', unitD: 'kun',
-    plInvite: 'Taklif', plSent: 'Kutilmoqda…', plWatch: 'Ko‘rish',
+    plInvite: 'Taklif', plSent: 'Kutilmoqda…', plWatch: 'O‘yinni ko‘rish',
     dndHint: 'Oy belgisi: «Bezovta qilmang» rejimi. Yoqilganda sizni hech kim taklif qila olmaydi.',
     dndNote: '«Bezovta qilmang» yoqilgan. Siz onlayn ko‘rinasiz, lekin hech kim sizni taklif qila olmaydi.',
     invText: 'seni Ludo o‘ynashga taklif qilmoqda', accept: 'Qabul qilish', decline: 'Rad etish',
@@ -61,7 +61,7 @@ const EXTRA = {
     invExpired: 'Taklif muddati tugadi', invUnavailable: 'O‘yinchi mavjud emas' },
   ru: { playersTitle: 'Игроки', playersDesc: 'Все игроки: онлайн и офлайн', playersBtn: 'ИГРОКИ',
     stOnline: 'онлайн', stGame: 'в игре', stOffline: 'офлайн', ago: 'назад', unitM: 'мин', unitH: 'ч', unitD: 'дн',
-    plInvite: 'Позвать', plSent: 'Ожидание…', plWatch: 'Смотреть',
+    plInvite: 'Позвать', plSent: 'Ожидание…', plWatch: 'Смотреть игру',
     dndHint: 'Значок луны: режим «Не беспокоить». Когда он включён, вас никто не может пригласить.',
     dndNote: '«Не беспокоить» включён. Вы видны онлайн, но пригласить вас никто не может.',
     invText: 'приглашает тебя сыграть в Лудо', accept: 'Принять', decline: 'Отклонить',
@@ -386,6 +386,8 @@ function renderGame(g) {
   }
 
   syncTokens(g);
+  $('btnChatG').classList.toggle('hidden', Boolean(g.spectator));
+  if (g.spectator) $('chat').classList.add('hidden');
 
   const turnSeat = g.seats.find(s => s.color === g.turn);
   $('hint').textContent = g.winner === null && g.spectator ? '👁 ' + t('watching') + (g.viewers > 1 ? ' · ' + g.viewers : '') : '';
@@ -477,46 +479,68 @@ function ago(ms) {
   return Math.floor(h / 24) + ' ' + t('unitD') + ' ' + t('ago');
 }
 
+const AVA_COLORS = [['#7ed56f','#55b86a'],['#5fd3c4','#3aa6a0'],['#f0b35a','#d9893a'],['#7aa7f0','#4f78d0'],['#c58af0','#9a5ad0'],['#f08a9a','#d05a70']];
+function plAvatar(ava, p) {
+  setAva(ava, p);
+  if (!p.avatar) {
+    const c = AVA_COLORS[Math.abs(parseInt(String(p.id).replace(/\D/g, '').slice(-6) || '0', 10)) % AVA_COLORS.length];
+    ava.style.background = `linear-gradient(160deg,${c[0]},${c[1]})`;
+    const w = (p.name || '?').trim().split(/\s+/);
+    ava.textContent = ((w[0] || '?').charAt(0) + (w[1] ? w[1].charAt(0) : '')).toUpperCase();
+  }
+}
 function renderPlayers() {
   const m = S.players;
   $('btnDnd').setAttribute('aria-checked', String(S.dnd));
   $('dndNote').classList.toggle('hidden', !S.dnd);
   $('dndHint').classList.toggle('hidden', S.dnd);
   if (!m) return;
-  $('plCount').textContent = t('stOnline') + ': ' + m.onlineCount + ' / ' + m.total;
+  $('plCount').classList.add('hidden');
   const box = $('plList');
   box.innerHTML = '';
-  m.list.forEach(p => {
-    const row = document.createElement('div');
-    row.className = 'pl' + (p.status === 'offline' ? ' off' : '');
-    const ava = document.createElement('div'); ava.className = 'ava'; setAva(ava, p);
-    const dot = document.createElement('i'); dot.className = 'dot ' + p.status; ava.appendChild(dot);
-    const nm = document.createElement('div'); nm.className = 'nm';
-    const b = document.createElement('b'); b.textContent = p.name + (p.dnd ? ' 🌙' : '');
-    const sm = document.createElement('small');
-    sm.textContent = p.status === 'online' ? t('stOnline') : p.status === 'game' ? t('stGame') :
-      t('stOffline') + (ago(p.seen) ? ' · ' + ago(p.seen) : '');
-    nm.appendChild(b); nm.appendChild(sm);
-    row.appendChild(ava); row.appendChild(nm);
-    let btn = null;
-    if (p.status === 'online') {
-      btn = document.createElement('button'); btn.className = 'pb';
-      const coolLeft = p.cool ? Math.ceil((S.playersAt + p.cool * 1000 - Date.now()) / 1000) : 0;
-      if (coolLeft > 0) { btn.disabled = true; btn.dataset.until = String(S.playersAt + p.cool * 1000); btn.textContent = fmtSec(coolLeft); }
-      else if (p.sent) {
-        btn.className = 'pb wait'; btn.textContent = t('plSent');
-        btn.onclick = () => { p.sent = false; send({ t: 'pinvite_cancel', to: p.id }); renderPlayers(); };
-      } else {
-        btn.textContent = t('plInvite');
-        btn.onclick = () => { p.sent = true; send({ t: 'pinvite_send', to: p.id }); renderPlayers(); };
-      }
-    } else if (p.status === 'game' && p.watch) {
-      btn = document.createElement('button'); btn.className = 'pb watch'; btn.textContent = '👁 ' + t('plWatch');
-      btn.onclick = () => send({ t: 'watch_start', id: p.id });
+  const on = m.list.filter(p => p.status !== 'offline');
+  const off = m.list.filter(p => p.status === 'offline');
+  const section = (title, count, items) => {
+    if (!items.length) return;
+    const h = document.createElement('div'); h.className = 'plsec'; h.textContent = title + ' · ' + count;
+    box.appendChild(h);
+    items.forEach(p => box.appendChild(plRow(p)));
+  };
+  section(t('stOnline'), m.onlineCount, on);
+  section(t('stOffline'), Math.max(off.length, (m.total || 0) - m.onlineCount), off);
+}
+function plRow(p) {
+  const row = document.createElement('div');
+  row.className = 'pl';
+  const ava = document.createElement('div'); ava.className = 'ava'; plAvatar(ava, p);
+  const dot = document.createElement('i'); dot.className = 'dot ' + p.status; ava.appendChild(dot);
+  const nm = document.createElement('div'); nm.className = 'nm';
+  const b = document.createElement('b'); b.textContent = p.name + (p.dnd ? ' 🌙' : '');
+  const sm = document.createElement('small'); sm.className = 'st ' + p.status;
+  sm.textContent = p.status === 'online' ? t('stOnline') + ' · ID ' + p.id : p.status === 'game' ? t('stGame') :
+    t('lastSeen') + ': ' + (ago(p.seen) || t('justNow'));
+  nm.appendChild(b); nm.appendChild(sm);
+  row.appendChild(ava); row.appendChild(nm);
+  let btn = null;
+  if (p.status === 'online') {
+    btn = document.createElement('button'); btn.className = 'pb';
+    const coolLeft = p.cool ? Math.ceil((S.playersAt + p.cool * 1000 - Date.now()) / 1000) : 0;
+    if (coolLeft > 0) { btn.disabled = true; btn.dataset.until = String(S.playersAt + p.cool * 1000); btn.textContent = fmtSec(coolLeft); }
+    else if (p.sent) {
+      btn.className = 'pb wait'; btn.textContent = t('plSent');
+      btn.onclick = () => { p.sent = false; send({ t: 'pinvite_cancel', to: p.id }); renderPlayers(); };
+    } else {
+      btn.textContent = t('plInvite');
+      btn.onclick = () => { p.sent = true; send({ t: 'pinvite_send', to: p.id }); renderPlayers(); };
     }
-    if (btn) row.appendChild(btn);
-    box.appendChild(row);
-  });
+  } else if (p.status === 'game' && p.watch) {
+    btn = document.createElement('button'); btn.className = 'pb'; btn.textContent = t('plWatch');
+    btn.onclick = () => send({ t: 'watch_start', id: p.id });
+  } else if (p.status === 'offline') {
+    btn = document.createElement('button'); btn.className = 'pb off'; btn.disabled = true; btn.textContent = t('stOffline').replace(/^./, c => c.toUpperCase());
+  }
+  if (btn) row.appendChild(btn);
+  return row;
 }
 
 function showInv(m) {
