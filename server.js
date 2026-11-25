@@ -569,6 +569,7 @@ function maybeDrop(g) {
 
 function destroyGame(g) {
   clearTimeout(g.timer);
+  dropStartMsg(g);
   games.delete(g.id);
   for (const id of g.watchers) { const w = users.get(id); if (w && w.watch === g.id) { w.watch = null; send(w, { t: 'idle' }); } }
   g.watchers.clear();
@@ -1530,11 +1531,19 @@ async function launchLobby(chat) {
   }
   g.groupChat = chat;                                     // ойын біткенде нәтиже осы топқа жарияланады
   const lines = g.seats.map(s => `${COLOR_DOT[s.color] || '⚪'} ${mention({ id: s.uid, name: s.name })}`);
-  await tgApi('sendMessage', {
+  const sr = await tgApi('sendMessage', {
     chat_id: chat, parse_mode: 'HTML',
     text: t.started + '\n\n' + lines.join('\n') + '\n\n' + t.enterHint,
     reply_markup: { inline_keyboard: [[{ text: t.enter, url: gameLink() }]] }
   });
+  if (sr && sr.ok && sr.result) g.startMid = sr.result.message_id;   // ойын біткенде осы хабарлама өшеді
+}
+
+// «Ойын басталды / Ойынға кіру» хабарламасын өшіреді (бір рет)
+function dropStartMsg(g) {
+  if (!g.groupChat || !g.startMid || g.startDropped) return;
+  g.startDropped = true;
+  tgApi('deleteMessage', { chat_id: g.groupChat, message_id: g.startMid }).catch(() => {});
 }
 
 async function lobbyCb(cb) {
@@ -1599,7 +1608,9 @@ function postGroupResults(g) {
   const who = s => mention({ id: s.uid, name: s.name });
   const placed = g.seats.filter(s => s.place != null).sort((a, b) => a.place - b.place);
   const out = g.seats.filter(s => s.place == null);
-  const lines = placed.map(s => `${MEDALS[s.place - 1] || '🏅'} ${who(s)}`).concat(out.map(s => `❌ ${who(s)}`));
+  const pts = s => PLACE_PTS[s.place - 1] || 0;
+  const lines = placed.map(s => `${MEDALS[s.place - 1] || '🏅'} ${who(s)} <b>+${pts(s)}</b>`).concat(out.map(s => `❌ ${who(s)} <b>+0</b>`));
+  dropStartMsg(g);
   tgApi('sendMessage', { chat_id: g.groupChat, parse_mode: 'HTML', text: T(g.groupChat).result + '\n\n' + lines.join('\n') }).catch(() => {});
 }
 
