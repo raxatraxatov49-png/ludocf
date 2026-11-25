@@ -72,20 +72,14 @@ function touchProfile(u, seenNow) {
   return p;
 }
 
-/* ================= Ұпай, апталық рейтинг, VIP, скиндер ================= */
+/* ================= Ұпай, VIP, скиндер ================= */
 
-const WEEK_MS = 7 * 24 * 3600 * 1000;
-const WEEK0 = Date.UTC(2026, 0, 5);                 // дүйсенбі 00:00 UTC: апта осыдан есептеледі
-const weekIdx = (n = Date.now()) => Math.floor((n - WEEK0) / WEEK_MS);
-const weekEndAt = () => WEEK0 + (weekIdx() + 1) * WEEK_MS;
-function normWeek(p) { const w = weekIdx(); if (p.wk !== w) { p.wk = w; p.wpts = 0; } }
 const VIP_REFS = 7;                                  // VIP алу үшін шақырылатын дос саны
 const ownsSkin = (p, id) => Boolean(p && SK.byId[id] && (id === 'classic' || p.vip || (p.skins || []).includes(id)));
 const skinOf = p => (p && ownsSkin(p, p.skin || 'classic') ? (p.skin || 'classic') : 'classic');
 
 function meInfo(p) {
-  normWeek(p);
-  return { t: 'me', vip: Boolean(p.vip), refs: (p.refs || []).length, need: VIP_REFS, pts: p.pts || 0, wpts: p.wpts || 0,
+  return { t: 'me', vip: Boolean(p.vip), refs: (p.refs || []).length, need: VIP_REFS, pts: p.pts || 0,
     wins: p.wins || 0, games: p.games || 0, skin: skinOf(p), skins: p.skins || [] };
 }
 function sendMe(id) { const u = users.get(id), p = profiles.get(id); if (u && p) send(u, meInfo(p)); }
@@ -93,25 +87,9 @@ function sendMe(id) { const u = users.get(id), p = profiles.get(id); if (u && p)
 function addPoints(uid, pts) {
   const p = profiles.get(uid);
   if (!p || !pts) return;
-  normWeek(p);
   p.pts = (p.pts || 0) + pts;
-  p.wpts = (p.wpts || 0) + pts;
   saveProfile(p);
   sendMe(uid);
-}
-
-function rankPayload(me, scope) {
-  const wk = scope !== 'all';
-  const rows = [];
-  for (const p of profiles.values()) {
-    normWeek(p);
-    const v = wk ? (p.wpts || 0) : (p.pts || 0);
-    if (v > 0 || p.id === me) rows.push({ id: p.id, name: p.name, avatar: p.avatar || null, vip: Boolean(p.vip), v });
-  }
-  rows.sort((a, b) => (b.v - a.v) || String(a.name).localeCompare(String(b.name)));
-  const idx = rows.findIndex(r => r.id === me);
-  return { t: 'rank', scope: wk ? 'week' : 'all', list: rows.filter(r => r.v > 0).slice(0, 50),
-    me: { rank: idx < 0 ? null : idx + 1, v: idx < 0 ? 0 : rows[idx].v }, resetMs: wk ? weekEndAt() - Date.now() : 0 };
 }
 
 // Реферал: дос сілтемемен бірінші рет кірсе (профилі жаңа), шақырушыға +1. 7 дос = VIP
@@ -709,7 +687,6 @@ function handle(u, m) {
       return send(u, { t: 'dnd', on: p.dnd });
     }
     case 'ping': return send(u, { t: 'pong' });
-    case 'rank_get': return send(u, rankPayload(u.id, m.scope === 'all' ? 'all' : 'week'));
     case 'me_get': case 'shop_get': { const p = profiles.get(u.id); return p && send(u, meInfo(p)); }
     case 'ref': return onRef(u, m.id);
     case 'shop_buy': return void shopBuy(u, m.id).catch(e => console.error('shop:', e && e.message));
