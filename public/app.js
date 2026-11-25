@@ -193,7 +193,6 @@ function tokEl(key, c) {
   g.setAttribute('class', 'tok');
   g.innerHTML = '<circle r=".5" cy="-.45" fill="transparent"/>' +
     '<ellipse class="gring" rx=".3" ry=".27" fill="none" stroke="#8c2323" stroke-width=".075"/>' +
-    '<circle class="sel" r=".62" fill="none" stroke="#111" stroke-width=".06" stroke-dasharray=".2 .14"/>' +
     '<g class="lift">' +
     `<path d="${PIN}" fill="#000" fill-opacity=".28" transform="translate(.07 .05)"/>` +
     `<path d="${PIN}" fill="url(#pin)" stroke="#2b2f3a" stroke-width=".035"/>` +
