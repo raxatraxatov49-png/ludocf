@@ -20,13 +20,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .langs{display:flex;flex-direction:column;gap:4px}
 .langs button{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:11px;color:#aab;line-height:1.2}
 .langs button.on{background:#f5c542;color:#222;border-color:#f5c542;font-weight:700}
-.hero{position:relative;overflow:hidden;border-radius:28px;padding:22px 18px 18px;border:1px solid rgba(160,150,255,.35);
-  background:
-   repeating-conic-gradient(rgba(255,255,255,.05) 0 25%,transparent 0 50%) 0 0/56px 56px,
-   linear-gradient(160deg,#4a3a8f 0%,#2b2a68 55%,#262a6e 100%);
-  box-shadow:0 10px 30px rgba(20,10,60,.6),inset 0 1px 0 rgba(255,255,255,.12)}
+.hero{position:relative;overflow:hidden;border-radius:28px;padding:22px 18px 18px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,#141414,#0a0a0a);box-shadow:0 10px 30px rgba(0,0,0,.6)}
 .hero h2{margin:0 0 6px;font-size:30px;line-height:1.1;font-weight:900;letter-spacing:-.3px}
-.hero p{margin:0 0 16px;color:#c3c0ef;font-size:16px;line-height:1.35}
+.hero p{margin:0 0 16px;color:#9aa0c4;font-size:16px;line-height:1.35}
 .hero button{width:100%;padding:18px;border-radius:20px;font-size:18px;font-weight:900;letter-spacing:2.5px;display:flex;align-items:center;justify-content:center;gap:12px;text-transform:uppercase}
 .hero button:active,.row:active{transform:scale(.98)}
 .gold{background:linear-gradient(180deg,#f9d878,#e8b04e);color:#2a1c00;box-shadow:0 4px 0 #b98322,0 8px 18px rgba(0,0,0,.35)}
@@ -55,9 +51,9 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .dots i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#8a90b3;margin:0 3px;animation:bl 1.2s infinite}
 .dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
 @keyframes bl{0%,80%,100%{opacity:.25}40%{opacity:1}}
-.pill{width:100%;max-width:440px;padding:15px;border-radius:999px;font-size:17px;font-weight:700;background:rgba(255,255,255,.08);border:1px solid var(--line);margin-bottom:10px}
-.pill.go{background:linear-gradient(180deg,#52c27a,#2f9a58);border-color:transparent}
-.pill.ghost{background:transparent}
+.pill{width:100%;max-width:440px;padding:16px;border-radius:20px;font-size:17px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;background:linear-gradient(180deg,#f9d878,#e8b04e);color:#2a1c00;border:0;box-shadow:0 4px 0 #b98322,0 8px 18px rgba(0,0,0,.35);margin-bottom:14px}
+.pill.go{background:linear-gradient(180deg,#f9d878,#e8b04e)}
+.pill.ghost{background:transparent;color:#f5c542;box-shadow:none;border:2px solid #f5c542}
 .fab{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid var(--line);font-size:24px}
 .fab.left{left:16px}
 
@@ -140,3 +136,18 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .cform{display:flex;gap:8px}
 .cform input{flex:1;min-width:0;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:#fff;padding:12px;font-size:16px;outline:0}
 .cform button{width:50px;border-radius:14px;background:linear-gradient(180deg,#5b93ee,#3b6fd0);font-size:18px}
+
+/* жандар (3 жүрек) */
+.hearts{display:flex;gap:3px}
+.hearts i{width:14px;height:13px;background:rgba(255,255,255,.18);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.800-8 11-8 11z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.800-8 11-8 11z'/%3E%3C/svg%3E") center/contain no-repeat}
+.hearts i.on{background:#ff2d3f;filter:drop-shadow(0 0 4px rgba(255,45,63,.7))}
+.fab svg{display:block;margin:auto}
+
+/* ойыншылар бөлімі: қара */
+#players{background:#000}
+#players .pl,#players .sback,#players .dndbtn{background:linear-gradient(180deg,#141414,#0a0a0a);border-color:rgba(255,255,255,.1)}
+/* ойыннан шыққан ойыншы белгісі */
+.pcard.gone{opacity:.55;filter:grayscale(.6)}
+.pcard.gone .hearts,.pcard.gone .die,.pcard.gone .tm{display:none}
+.gonemark{font-size:12.5px;font-weight:700;color:#ff8a8a;white-space:nowrap}
+.gonemark:empty{display:none}
