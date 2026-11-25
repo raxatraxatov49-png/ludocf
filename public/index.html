@@ -12,30 +12,34 @@
 
 <!-- Бас мәзір -->
 <main id="menu" class="screen active">
-  <header class="who">
-    <div class="ava" id="meAva"></div>
-    <b id="meName">…</b>
-    <div class="langs" id="langs">
-      <button data-lang="kk">ҚАЗ</button><button data-lang="uz">UZ</button><button data-lang="ru">РУС</button>
-    </div>
-  </header>
-  <h1 class="logo">LUDO</h1>
-  <section class="card">
-    <h2 data-i18n="randomTitle"></h2>
-    <p data-i18n="randomDesc"></p>
-    <button id="btnRandom" class="big" data-i18n="play"></button>
-  </section>
-  <section class="card">
-    <h2 data-i18n="friendTitle"></h2>
-    <p data-i18n="friendDesc"></p>
-    <button id="btnFriend" class="big alt" data-i18n="friendBtn"></button>
-  </section>
-  <section class="card">
-    <h2 data-i18n="playersTitle"></h2>
-    <p data-i18n="playersDesc"></p>
-    <button id="btnPlayers" class="big ghostbig"><span data-i18n="playersBtn"></span> <small id="plOnlineBadge"></small></button>
-  </section>
-  <div id="conn" class="conn hidden" data-i18n="connecting"></div>
+  <div class="menuwrap">
+    <header class="prof">
+      <div class="ringava"><i class="crown" aria-hidden="true">👑</i><div class="ava" id="meAva"></div></div>
+      <div class="pn"><b id="meName">…</b><small data-i18n="role"></small></div>
+      <div class="langs" id="langs">
+        <button data-lang="kk">ҚАЗ</button><button data-lang="uz">UZ</button><button data-lang="ru">РУС</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <h2 data-i18n="randomTitle"></h2>
+      <p data-i18n="randomDesc"></p>
+      <button id="btnRandom" class="gold"><span class="tri"></span><span data-i18n="play"></span></button>
+    </section>
+
+    <section class="hero friend">
+      <h2 data-i18n="friendTitle"></h2>
+      <p data-i18n="friendDesc"></p>
+      <button id="btnFriend" class="blue"><span data-i18n="friendBtn"></span></button>
+    </section>
+
+    <button id="btnPlayers" class="row" type="button">
+      <span class="ico">🎮</span>
+      <span class="rt"><b data-i18n="playersTitle"></b><em id="plOnlineBadge"></em></span>
+      <span class="chev">›</span>
+    </button>
+    <div id="conn" class="conn hidden" data-i18n="connecting"></div>
+  </div>
 </main>
 
 <!-- Ойыншылар тізімі -->
