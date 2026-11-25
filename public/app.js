@@ -104,9 +104,10 @@ const send = o => { if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(
 function haptic(kind) { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(kind); } catch (e) {} }
 
 /* ---------- Тақта геометриясы ---------- */
-const C  = ['#e23b2e', '#1fa653', '#f4b400', '#2477ea'];   // қызыл, жасыл, сары, көк
-const CL = ['#ff9a8a', '#7ceaa5', '#ffe58a', '#9ccaff'];   // ашық реңк
-const CD = ['#8a1208', '#0a5a2c', '#9a6a00', '#0c3a8c'];   // қою реңк
+const C  = ['#e8192c', '#0a9a3f', '#f5c800', '#27a2f4'];   // қызыл, жасыл, сары, көк (ұяшық/карточка)
+const ZC = ['#e8192c', '#0a9a3f', '#ffd719', '#13659f'];   // үй аймағының түсі
+const CL = ['#ff7a85', '#5fd68a', '#ffe666', '#8fd0ff'];   // ашық реңк
+const CD = ['#8a0f1a', '#065c26', '#a38200', '#0b4a7a'];   // қою реңк
 const START = [0, 13, 26, 39];
 const SAFE_STARS = [8, 21, 34, 47];
 const RING = [];
@@ -139,76 +140,65 @@ const starPts = (cx, cy, R, r) => {
   return p.join(' ');
 };
 
+/* Ludo King стиліндегі жалпақ, ашық тақта */
 function buildBoard() {
+  const G = '#3a3a3a';
   let h = '<defs>';
   for (let c = 0; c < 4; c++) {
-    h += `<linearGradient id="zg${c}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${CL[c]}"/><stop offset=".4" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></linearGradient>` +
-      `<linearGradient id="cg${c}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${CL[c]}"/><stop offset="1" stop-color="${C[c]}"/></linearGradient>` +
-      `<linearGradient id="pb${c}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${CD[c]}"/><stop offset=".36" stop-color="${CL[c]}"/><stop offset=".62" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></linearGradient>` +
-      `<radialGradient id="ph${c}" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="${CL[c]}"/><stop offset=".65" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></radialGradient>`;
+    h += `<radialGradient id="ph${c}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${CL[c]}"/><stop offset=".55" stop-color="${C[c]}"/><stop offset="1" stop-color="${CD[c]}"/></radialGradient>` +
+      `<radialGradient id="gl${c}"><stop offset="0" stop-color="${CL[c]}" stop-opacity=".95"/><stop offset="1" stop-color="${C[c]}" stop-opacity="0"/></radialGradient>`;
   }
-  h += '<linearGradient id="frame" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a4178"/><stop offset=".5" stop-color="#171b3a"/><stop offset="1" stop-color="#0a0d22"/></linearGradient>' +
-    '<linearGradient id="cell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7f8fd"/><stop offset="1" stop-color="#c9cee3"/></linearGradient>' +
-    '<radialGradient id="slotg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#03050d" stop-opacity=".8"/><stop offset=".85" stop-color="#03050d" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity=".15"/></radialGradient>' +
-    '<radialGradient id="shg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".65"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>' +
-    '<linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>' +
-    '<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#e09a00"/></linearGradient></defs>';
+  h += '<linearGradient id="pin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d929e"/><stop offset=".3" stop-color="#ffffff"/><stop offset=".65" stop-color="#d5d8df"/><stop offset="1" stop-color="#7a7f8b"/></linearGradient></defs>';
+  h += '<rect width="15" height="15" fill="#fff"/>';
 
-  // қою жақтау + негіз
-  h += '<rect x="-.5" y="-.5" width="16" height="16" rx=".85" fill="url(#frame)"/>' +
-    '<rect x="-.14" y="-.14" width="15.28" height="15.28" rx=".4" fill="none" stroke="#7d86c8" stroke-opacity=".45" stroke-width=".05"/>' +
-    '<rect width="15" height="15" fill="#0b0f28"/>';
-
-  // 4 үй (түсті аймақ + ұялар)
+  // 4 үй: қалың түсті жиек + ақ ішкі шаршы + 4 түсті дөңгелек
   ZONES.forEach(([x, y], c) => {
-    h += `<rect x="${x}" y="${y}" width="6" height="6" fill="url(#zg${c})"/>` +
-      `<rect x="${x + 1}" y="${y + 1}" width="4" height="4" rx=".55" fill="#050818" fill-opacity=".42" stroke="${CL[c]}" stroke-opacity=".75" stroke-width=".06"/>`;
+    h += `<rect x="${x}" y="${y}" width="6" height="6" fill="${ZC[c]}"/>` +
+      `<rect x="${x + 1}" y="${y + 1}" width="4" height="4" fill="#fff" stroke="${G}" stroke-width=".03"/>`;
     BASE0.forEach(p => {
       const q = rot(p, c);
-      h += `<circle cx="${q[0]}" cy="${q[1]}" r=".5" fill="url(#slotg)" stroke="${CL[c]}" stroke-opacity=".85" stroke-width=".07"/>` +
-        `<circle cx="${q[0]}" cy="${q[1]}" r=".3" fill="none" stroke="${C[c]}" stroke-opacity=".55" stroke-width=".05"/>`;
+      h += `<circle cx="${q[0]}" cy="${q[1]}" r=".55" fill="${c === 3 ? C[3] : ZC[c]}" stroke="rgba(0,0,0,.28)" stroke-width=".03"/>`;
     });
   });
 
-  // жол ұяшықтары
-  RING.forEach(([x, y]) => { h += `<rect x="${x + .03}" y="${y + .03}" width=".94" height=".94" rx=".1" fill="url(#cell)" stroke="#8f96b8" stroke-width=".04"/>`; });
+  // ақ ұяшықтар (жұқа қара тор)
+  RING.forEach(([x, y]) => { h += `<rect x="${x}" y="${y}" width="1" height="1" fill="#fff" stroke="${G}" stroke-width=".025"/>`; });
   for (let c = 0; c < 4; c++) {
     const [sx, sy] = RING[START[c]];
-    h += `<rect x="${sx + .03}" y="${sy + .03}" width=".94" height=".94" rx=".1" fill="url(#cg${c})" stroke="${CD[c]}" stroke-width=".05"/>` +
-      `<circle cx="${sx + .5}" cy="${sy + .5}" r=".24" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".06"/>`;
-    COL0.forEach(p => { const q = rot(p, c); h += `<rect x="${q[0] - .47}" y="${q[1] - .47}" width=".94" height=".94" rx=".1" fill="url(#cg${c})" stroke="${CD[c]}" stroke-width=".05"/>`; });
+    h += `<rect x="${sx}" y="${sy}" width="1" height="1" fill="${C[c]}" stroke="${G}" stroke-width=".025"/>`;
+    COL0.forEach(p => { const q = rot(p, c); h += `<rect x="${q[0] - .5}" y="${q[1] - .5}" width="1" height="1" fill="${C[c]}" stroke="${G}" stroke-width=".025"/>`; });
   }
-  SAFE_STARS.forEach(i => { const [x, y] = RING[i]; h += `<polygon points="${starPts(x + .5, y + .5, .33, .14)}" fill="url(#gold)" stroke="#a86b00" stroke-width=".03" stroke-linejoin="round"/>`; });
-  [['.3,7.25 .72,7.5 .3,7.75', 0], ['7.25,.3 7.5,.72 7.75,.3', 1], ['14.7,7.25 14.28,7.5 14.7,7.75', 2], ['7.25,14.7 7.5,14.28 7.75,14.7', 3]].forEach(([pts, c]) => {
-    h += `<polygon points="${pts}" fill="${CD[c]}" stroke="${CD[c]}" stroke-width=".05" stroke-linejoin="round"/>`;
-  });
-
-  // орталық
+  // орталық үшбұрыштар
   [['6,6 6,9 7.5,7.5', 0], ['6,6 9,6 7.5,7.5', 1], ['9,6 9,9 7.5,7.5', 2], ['6,9 9,9 7.5,7.5', 3]].forEach(([pts, c]) => {
-    h += `<polygon points="${pts}" fill="url(#zg${c})" stroke="#0b0f28" stroke-width=".06" stroke-linejoin="round"/>`;
+    h += `<polygon points="${pts}" fill="${C[c]}"/>`;
   });
-  h += '<circle cx="7.5" cy="7.5" r=".3" fill="#fff" fill-opacity=".92" stroke="#0b0f28" stroke-width=".05"/><circle cx="7.5" cy="7.5" r=".14" fill="#0b0f28"/>';
-  h += '<rect width="15" height="15" fill="url(#gloss)" pointer-events="none"/><g id="toks"></g>';
+  // контурлы жұлдыздар
+  SAFE_STARS.forEach(i => { const [x, y] = RING[i]; h += `<polygon points="${starPts(x + .5, y + .5, .4, .17)}" fill="#fff" stroke="#333" stroke-width=".04" stroke-linejoin="round"/>`; });
+  // жұқа көрсеткілер
+  for (let c = 0; c < 4; c++) {
+    h += `<path d="M.2 7.5H.82M.56 7.24L.82 7.5L.56 7.76" fill="none" stroke="${C[c]}" stroke-width=".05" stroke-linecap="round" stroke-linejoin="round" transform="rotate(${c * 90} 7.5 7.5)"/>`;
+  }
+  h += `<rect width="15" height="15" fill="none" stroke="#222" stroke-width=".08"/><g id="fx"></g><g id="toks"></g>`;
   $('board').innerHTML = h;
 }
 
-/* ---------- Фишкалар (3D көрінетін) ---------- */
+/* ---------- Фишкалар: күміс «пин» + түсті шар + қызыл-қоңыр сақина ---------- */
 const tokEls = {};
 const SVGNS = 'http://www.w3.org/2000/svg';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const PIN = 'M0 -.02C-.2 -.3 -.4 -.45 -.4 -.66A.4 .4 0 1 1 .4 -.66C.4 -.45 .2 -.3 0 -.02Z';
 function tokEl(key, c) {
   if (tokEls[key]) return tokEls[key];
   const g = document.createElementNS(SVGNS, 'g');
   g.setAttribute('class', 'tok');
-  g.innerHTML = '<circle r=".56" cy="-.02" fill="transparent"/>' +
-    '<ellipse cx=".05" cy=".37" rx=".44" ry=".17" fill="url(#shg)"/>' +
-    '<circle class="ring" r=".52" cy=".02" fill="none" stroke="#fff" stroke-width=".06" stroke-dasharray=".2 .13"/>' +
+  g.innerHTML = '<circle r=".5" cy="-.45" fill="transparent"/>' +
+    '<ellipse class="gring" rx=".3" ry=".27" fill="none" stroke="#8c2323" stroke-width=".075"/>' +
+    '<circle class="sel" r=".62" fill="none" stroke="#111" stroke-width=".06" stroke-dasharray=".2 .14"/>' +
     '<g class="lift">' +
-    `<path d="M-.34 .34Q-.34 .45 0 .45Q.34 .45 .34 .34C.3 .14 .16 .04 .1 -.08L-.1 -.08C-.16 .04 -.3 .14 -.34 .34Z" fill="url(#pb${c})" stroke="${CD[c]}" stroke-width=".03"/>` +
-    `<ellipse cy=".33" rx=".34" ry=".085" fill="${CD[c]}" fill-opacity=".5"/>` +
-    `<ellipse cy="-.06" rx=".15" ry=".05" fill="${CD[c]}" fill-opacity=".55"/>` +
-    `<circle cy="-.28" r=".21" fill="url(#ph${c})" stroke="${CD[c]}" stroke-width=".03"/>` +
-    '<ellipse cx="-.07" cy="-.36" rx=".075" ry=".045" fill="#fff" fill-opacity=".7" transform="rotate(-28 -.07 -.36)"/>' +
+    `<path d="${PIN}" fill="#000" fill-opacity=".28" transform="translate(.07 .05)"/>` +
+    `<path d="${PIN}" fill="url(#pin)" stroke="#2b2f3a" stroke-width=".035"/>` +
+    `<circle cy="-.66" r=".25" fill="url(#ph${c})" stroke="${CD[c]}" stroke-width=".035"/>` +
+    '<ellipse cx="-.08" cy="-.75" rx=".09" ry=".05" fill="#fff" fill-opacity=".65" transform="rotate(-30 -.08 -.75)"/>' +
     '</g>';
   $('toks').appendChild(g);
   tokEls[key] = g;
@@ -221,9 +211,25 @@ function putTok(c, i, s, dur, sc) {
   el.style.transform = `translate(${p[0]}px,${p[1]}px) scale(${sc || 1})`;
   return el;
 }
+// жүргенде пин жоғары көтеріліп, үлкейіп секіреді
 function hop(el, dur) {
   const l = el.querySelector('.lift');
-  if (l && l.animate) l.animate([{ transform: 'translateY(0px)' }, { transform: 'translateY(-.34px)', offset: .5 }, { transform: 'translateY(0px)' }], { duration: dur, easing: 'ease-out' });
+  if (l && l.animate) l.animate([
+    { transform: 'translateY(-.22px) scale(1.3)' },
+    { transform: 'translateY(-.55px) scale(1.42)', offset: .5 },
+    { transform: 'translateY(-.22px) scale(1.3)' }], { duration: dur, easing: 'ease-out' });
+}
+// артында қалатын жарқыраған із (видеодағыдай)
+function trail(c, a, b) {
+  const fx = $('fx');
+  if (!fx) return;
+  const dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1;
+  const g = document.createElementNS(SVGNS, 'g');
+  g.innerHTML = `<circle cx="${a[0]}" cy="${a[1]}" r=".38" fill="url(#gl${c})"/>` +
+    `<circle cx="${a[0] + dx / n * .45}" cy="${a[1] + dy / n * .45}" r=".08" fill="${CL[c]}" stroke="${C[c]}" stroke-width=".03"/>`;
+  fx.appendChild(g);
+  if (g.animate) { const an = g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }); an.onfinish = () => g.remove(); }
+  else setTimeout(() => g.remove(), 700);
 }
 
 function renderTokens(g) {
@@ -257,26 +263,44 @@ function renderTokens(g) {
   Object.values(tokEls).forEach(el => { if (el.classList.contains('can')) $('toks').appendChild(el); });
 }
 
-/* Жүріс анимациясы: фишка ұяшықтан ұяшыққа секіріп жүреді, жеген кезде жеңілген фишка артқа қарай өз жолымен үйіне қайтады */
+/* Жүріс анимациясы: пин үлкейіп көтеріліп, ұяшықтан ұяшыққа секіреді, артында жарқыраған із қалады; жеген кезде жеңілген фишка өз жолымен артқа жүріп үйіне қайтады */
 async function playMove(g) {
   const lm = g.last;
   if (!lm) return;
-  const STEP = 230;
+  const STEP = 240;
   const el = tokEl(lm.color + '-' + lm.i, lm.color);
   $('toks').appendChild(el);
+  el.classList.add('moving');
   const states = [];
   if (lm.from === -1) states.push(0); else for (let s = lm.from + 1; s <= lm.to; s++) states.push(s);
-  for (const s of states) { putTok(lm.color, lm.i, s, STEP, 1); hop(el, STEP); await sleep(STEP + 15); }
+  let prev = tokenPos(lm.color, lm.from, lm.i);
+  for (const s of states) {
+    const nxt = tokenPos(lm.color, s, lm.i);
+    trail(lm.color, prev, nxt);
+    putTok(lm.color, lm.i, s, STEP, 1); hop(el, STEP);
+    prev = nxt;
+    await sleep(STEP + 15);
+  }
+  el.classList.remove('moving');
   if (lm.captured && lm.captured.length) {
     haptic('error');
     await sleep(180);
     await Promise.all(lm.captured.map(async cp => {
       const e = tokEl(cp.color + '-' + cp.i, cp.color);
+      e.classList.add('moving');
       const path = [];
       for (let s = cp.s - 1; s >= 0; s--) path.push(s);
       path.push(-1);
       const step = Math.max(30, Math.min(110, 1700 / path.length));
-      for (const s of path) { putTok(cp.color, cp.i, s, step, 1); hop(e, step); await sleep(step); }
+      let pv = tokenPos(cp.color, cp.s, cp.i);
+      for (const s of path) {
+        const nx = tokenPos(cp.color, s, cp.i);
+        trail(cp.color, pv, nx);
+        putTok(cp.color, cp.i, s, step, 1); hop(e, step);
+        pv = nx;
+        await sleep(step);
+      }
+      e.classList.remove('moving');
     }));
   }
 }
