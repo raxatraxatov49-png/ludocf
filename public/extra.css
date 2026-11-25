@@ -128,3 +128,9 @@
 @keyframes hdot{50%{transform:scale(.6);opacity:.55}}
 @keyframes hmine{50%{transform:scale(1.04)}}
 @media (prefers-reduced-motion:reduce){#game .hint.mine,#game .hint::before{animation:none}}
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+}
