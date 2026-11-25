@@ -302,7 +302,7 @@ function tokEl(key, c) {
   if (tokEls[key]) return tokEls[key];
   const g = document.createElementNS(SVGNS, 'g');
   g.setAttribute('class', 'tok');
-  g.innerHTML = '<circle r=".5" cy="-.45" fill="transparent"/>' +
+  g.innerHTML = '<circle class="halo" r=".52" cy="-.3"/>' + '<circle r=".5" cy="-.45" fill="transparent"/>' +
     '<ellipse class="gring" rx=".3" ry=".27" fill="none" stroke="#8c2323" stroke-width=".075"/>' +
     '<g class="lift">' +
     `<path d="${PIN}" fill="#000" fill-opacity=".28" transform="translate(.07 .05)"/>` +
@@ -354,6 +354,7 @@ function renderTokens(g) {
       items.push({ key, c, i, s: arr[i], p: tokenPos(c, arr[i], i) });
     }
   }
+  const pick = [];
   const groups = {};
   items.forEach(it => { if (it.s >= 0 && it.s < 56) (groups[it.p[0] + ',' + it.p[1]] = groups[it.p[0] + ',' + it.p[1]] || []).push(it); });
   items.forEach(it => {
@@ -366,11 +367,16 @@ function renderTokens(g) {
     el._y = y;
     const can = canPick && it.c === mine.color && g.legal.includes(it.i);
     el.classList.toggle('can', Boolean(can));
-    el.onclick = can ? () => send({ t: 'move', i: it.i }) : null;
+    el.onclick = null;
+    if (can) pick.push({ i: it.i, x, y: y - 0.35 });
   });
+  S.pick = pick;
   // төмендегі фишка алдында тұрсын (тереңдік), таңдалатындар ең үстінде
-  Object.values(tokEls).sort((a, b) => (a._y || 0) - (b._y || 0)).forEach(el => $('toks').appendChild(el));
-  Object.values(tokEls).forEach(el => { if (el.classList.contains('can')) $('toks').appendChild(el); });
+  const all = Object.values(tokEls);
+  const order = all.filter(el => !el.classList.contains('can')).sort((a, b) => (a._y || 0) - (b._y || 0))
+    .concat(all.filter(el => el.classList.contains('can')));
+  const cur = Array.from($('toks').children);
+  if (order.length !== cur.length || order.some((el, k) => el !== cur[k])) order.forEach(el => $('toks').appendChild(el));
 }
 
 /* Жүріс анимациясы: пин үлкейіп көтеріліп, ұяшықтан ұяшыққа секіреді, артында жарқыраған із қалады; жеген кезде жеңілген фишка өз жолымен артқа жүріп үйіне қайтады */
@@ -421,7 +427,7 @@ function syncTokens(g) {
   if (S.moveSeq === null || g.moveSeq < S.moveSeq || g.moveSeq > S.moveSeq + 1 || !g.last) { S.moveSeq = g.moveSeq; return renderTokens(g); }
   if (g.moveSeq === S.moveSeq + 1) {
     S.moveSeq = g.moveSeq;
-    S.animating = true;
+    S.animating = true; S.pick = [];
     playMove(g).catch(() => {}).then(() => { S.animating = false; if (S.game && S.latest) syncTokens(S.latest); });
     return;
   }
@@ -445,12 +451,12 @@ function rollDie(c, v) {
   const d = dieEl(c);
   if (!d) return;
   S.dieBusy[c] = true;
-  d.classList.remove('rolling'); void d.offsetWidth; d.classList.add('rolling');
+  d.classList.remove('rolling', 'land', 'ready'); void d.offsetWidth; d.classList.add('rolling');
   const pc = $('card' + c); if (pc) pc.classList.add('rollz');
   SFX.roll();
   let n = 0;
   const iv = setInterval(() => {
-    if (++n >= 8) { clearInterval(iv); setDie(c, v); S.dieBusy[c] = false; d.classList.remove('rolling'); const pc2 = $('card' + c); if (pc2) pc2.classList.remove('rollz'); }
+    if (++n >= 9) { clearInterval(iv); setDie(c, v); S.dieBusy[c] = false; d.classList.remove('rolling'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); setTimeout(() => d.classList.remove('land'), 520); const pc2 = $('card' + c); if (pc2) pc2.classList.remove('rollz'); }
     else setDie(c, 1 + Math.floor(Math.random() * 6));
   }, 80);
 }
@@ -480,7 +486,7 @@ function renderGame(g) {
       el.dataset.uid = seat.id;
       el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="hearts"><i></i><i></i><i></i></span><span class="gonemark"></span><span class="tm"></span></div></div>' +
         '<button class="die" type="button" aria-label="dice"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></button>';
-      el.querySelector('.die').onclick = e => { if (e.currentTarget.classList.contains('ready')) send({ t: 'roll' }); };
+      el.onclick = () => { const d = el.querySelector('.die'); if (d && d.classList.contains('ready')) { d.classList.remove('ready'); send({ t: 'roll' }); } };
       setAva(el.querySelector('.ava'), seat);
       S.dieBusy[c] = false;
     }
@@ -499,7 +505,14 @@ function renderGame(g) {
   if (g.spectator) $('chat').classList.add('hidden');
 
   const turnSeat = g.seats.find(s => s.color === g.turn);
-  $('hint').textContent = g.winner === null && g.spectator ? '👁 ' + t('watching') + (g.viewers > 1 ? ' · ' + g.viewers : '') : '';
+  let hintTxt = '';
+  if (g.winner === null) {
+    if (g.spectator) hintTxt = '👁 ' + t('watching') + (g.viewers > 1 ? ' · ' + g.viewers : '');
+    else if (myTurn && g.phase === 'roll') hintTxt = '🎲 ' + t('hintRoll');
+    else if (myTurn && g.phase === 'move') hintTxt = '👆 ' + t('hintMove');
+    else if (turnSeat && g.phase !== 'over') hintTxt = turnSeat.name + ' ' + t('hintOther');
+  }
+  $('hint').textContent = hintTxt;
   if (myTurn && !S.lastTurnMine) haptic('success');
   S.lastTurnMine = myTurn;
 
@@ -838,6 +851,23 @@ document.querySelectorAll('#langs button').forEach(b => {
     if (S.screen === 'players') renderPlayers();
     if (S.screen === 'game' && S.game) renderGame(S.game);
   };
+});
+
+$('board').addEventListener('pointerdown', e => {
+  const pk = S.pick;
+  if (!pk || !pk.length || S.animating) return;
+  const svg = $('board'), m = svg.getScreenCTM();
+  if (!m) return;
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(m.inverse());
+  let best = null, bd = 1.2;
+  pk.forEach(k => { const d = Math.hypot(k.x - p.x, k.y - p.y); if (d < bd) { bd = d; best = k; } });
+  if (!best) return;
+  e.preventDefault();
+  S.pick = [];
+  haptic('success');
+  send({ t: 'move', i: best.i });
+  setTimeout(() => { if (S.latest && !S.animating && S.screen === 'game') renderTokens(S.latest); }, 1500);
 });
 
 buildBoard();
