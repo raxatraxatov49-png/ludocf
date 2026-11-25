@@ -8,6 +8,7 @@ const { verifyInitData } = require('./lib/telegram');
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const DEV = process.env.DEV === '1';
 const BOT_USERNAME = (process.env.BOT_USERNAME || '').replace(/^@/, '');
+const MINI_APP_SHORT = (process.env.MINI_APP_SHORT || '').replace(/^\/+|\/+$/g, '');
 const MINI_APP_URL = (process.env.MINI_APP_URL || '').replace(/\/+$/, '');
 const WEBHOOK_URL = process.env.WEBHOOK_URL || (MINI_APP_URL + '/telegram-webhook');
 const WEBHOOK_SECRET = crypto.createHash('sha256').update('ludo:' + BOT_TOKEN).digest('hex').slice(0, 48);
@@ -98,9 +99,10 @@ function flushQueue() {
     const take = queue.splice(0, MAX_PLAYERS);
     startGame(take.map(id => users.get(id)));
     if (queue.length) { armQueue(); broadcastQueue(); }
-  } else if (queue.length === 1) {
-    armQueue();           // жалғыз қалса, іздеуді жалғастырамыз
-    broadcastQueue();
+  } else {
+    // 20 секундта қарсылас табылмады: іздеуді тоқтатып, бас мәзірге қайтарамыз
+    const lone = queue.splice(0).map(id => users.get(id));
+    lone.forEach(u => { if (isOnline(u)) { send(u, { t: 'error', code: 'no_players' }); send(u, { t: 'idle' }); } });
   }
 }
 
@@ -202,12 +204,14 @@ function snapshot(g, spectator) {
     spectator: Boolean(spectator),
     viewers: g.watchers.size,
     id: g.id,
-    seats: g.seats.map(s => ({ color: s.color, id: s.uid, name: s.name, avatar: s.avatar, auto: s.auto, left: s.left })),
+    seats: g.seats.map(s => ({ color: s.color, id: s.uid, name: s.name, avatar: s.avatar, auto: s.auto, left: s.left, dice: s.shown })),
     tokens: g.tokens,
     turn: cur(g).color,
     phase: g.phase,
     dice: g.dice,
     rollSeq: g.rollSeq,
+    rollColor: g.rollColor,
+    moveSeq: g.moveSeq,
     legal: g.phase === 'move' ? g.legal : [],
     ms: Math.max(0, g.deadline - Date.now()),
     winner: g.winner,
@@ -242,9 +246,9 @@ function startGame(list) {
   const colors = L.COLORS_FOR[list.length];
   const g = {
     id: 'g' + (++gameSeq),
-    seats: list.map((u, i) => ({ uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, left: false })),
+    seats: list.map((u, i) => ({ uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, left: false, shown: 1 + Math.floor(Math.random() * 6) })),
     tokens: L.newTokens(colors),
-    turnIdx: 0, phase: 'roll', dice: null, legal: [], rollSeq: 0, sixes: 0,
+    turnIdx: 0, phase: 'roll', dice: null, legal: [], rollSeq: 0, rollColor: null, moveSeq: 0, chat: [], sixes: 0,
     deadline: 0, timer: null, watchers: new Set(), winner: null, reason: null, last: null, at: Date.now(), emptySince: 0
   };
   games.set(g.id, g);
@@ -280,16 +284,18 @@ function roll(g) {
   const seat = cur(g);
   const d = 1 + Math.floor(Math.random() * 6);
   g.dice = d;
+  seat.shown = d;                        // кубикте соңғы түскен сан тұра береді
+  g.rollColor = seat.color;
   g.rollSeq++;
   g.sixes = d === 6 ? g.sixes + 1 : 0;
   g.legal = g.sixes >= 3 ? [] : L.legal(g.tokens, seat.color, d);
   if (!g.legal.length) {                 // жүріс жоқ (немесе қатарынан үш алты): кезек ауысады
     g.phase = 'wait';
-    setTimer(g, 1100, () => nextTurn(g));
+    setTimer(g, 1700, () => nextTurn(g));
   } else if (g.legal.length === 1) {     // жалғыз мүмкіндік: өзі жүреді
     g.phase = 'wait';
     const only = g.legal[0];
-    setTimer(g, 800, () => moveToken(g, only));
+    setTimer(g, 1300, () => moveToken(g, only));
   } else {
     g.phase = 'move';
     setTimer(g, seat.auto ? AUTO_MS : TURN_MS, () => onTimeout(g));
@@ -304,6 +310,7 @@ function moveToken(g, i) {
   if (!Number.isInteger(i) || !L.legal(g.tokens, seat.color, d).includes(i)) return;
   const r = L.move(g.tokens, seat.color, i, d);
   g.last = { color: seat.color, i, from: r.from, to: r.to, captured: r.captured };
+  g.moveSeq++;
   if (L.won(g.tokens, seat.color)) return finish(g, seat.color, 'win');
   if (r.extra) return beginTurn(g);      // 6 / жеу / финиш: тағы лақтырады
   nextTurn(g);
@@ -358,6 +365,31 @@ function destroyGame(g) {
   g.seats.forEach(s => { const u = users.get(s.uid); if (u && u.game === g.id) u.game = null; });
 }
 
+
+/* ================= Чат ================= */
+const CHAT_MAX = 200, CHAT_GAP = 600;
+function chatMsg(u, text) {
+  text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, CHAT_MAX);
+  if (!text) return;
+  const now = Date.now();
+  if (now - (u.lastChat || 0) < CHAT_GAP) return;
+  u.lastChat = now;
+  let targets, color = null;
+  const g = games.get(u.game);
+  if (g) {
+    const seat = seatOf(g, u.id);
+    if (!seat || seat.left) return;
+    color = seat.color;
+    targets = g.seats.filter(s => !s.left).map(s => users.get(s.uid));
+  } else {
+    const r = rooms.get(userRoom.get(u.id));
+    if (!r) return;
+    targets = r.members.map(id => users.get(id));
+  }
+  const msg = { t: 'chat', id: u.id, name: u.name, color, text, at: now };
+  if (g) { g.chat.push(msg); if (g.chat.length > 50) g.chat.shift(); }
+  targets.forEach(x => send(x, msg));
+}
 
 /* ================= Ойыншылар тізімі, шақыру, көру ================= */
 
@@ -515,6 +547,7 @@ function handle(u, m) {
       return send(u, { t: 'dnd', on: p.dnd });
     }
     case 'ping': return send(u, { t: 'pong' });
+    case 'chat': return chatMsg(u, m.text);
     case 'find': return joinQueue(u);
     case 'cancel': return leaveQueue(u);
     case 'room_create': return createRoom(u);
@@ -559,12 +592,13 @@ function onAuth(ws, m) {
   u.name = info.name; u.avatar = info.avatar || null; u.ws = ws;
   ws.user = u;
   const prof = touchProfile(u, true);
-  send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME, dnd: Boolean(prof.dnd) });
+  send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME, app: MINI_APP_SHORT, dnd: Boolean(prof.dnd) });
   const g = games.get(u.game);
   if (g) {
     const seat = seatOf(g, u.id);
     if (seat && !seat.left) { seat.auto = false; seat.miss = 0; }
     sendGame(u);
+    send(u, { t: 'chat_hist', list: g.chat || [] });
   } else u.game = null;
 }
 
