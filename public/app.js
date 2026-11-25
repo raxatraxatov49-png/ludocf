@@ -722,6 +722,7 @@ function plRow(p) {
   const dot = document.createElement('i'); dot.className = 'dot ' + p.status; ava.appendChild(dot);
   const nm = document.createElement('div'); nm.className = 'nm';
   const b = document.createElement('b'); b.textContent = p.name + (p.dnd ? ' 🌙' : '');
+  if (p.vip) row.classList.add('isvip');   // VIP: алтын ат + VIP белгісі
   const sm = document.createElement('small'); sm.className = 'st ' + p.status;
   sm.textContent = p.status === 'online' ? t('stOnline') + ' · ID ' + p.id : p.status === 'game' ? t('stGame') :
     t('lastSeen') + ': ' + (ago(p.seen) || t('justNow'));
