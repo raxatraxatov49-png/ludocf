@@ -204,7 +204,9 @@ const SFX = (() => {
   }
   const play = fn => { if (ready()) { try { fn(ctx.currentTime + 0.02); } catch (e) {} } };
   return {
-    unlock() { wake(); },
+    /* басқанда: ctx iOS-та «interrupted/suspended» болып қалса, жаңадан жасаймыз */
+    unlock() { if (ctx && ctx.state !== 'running') { try { ctx.close(); } catch (e) {} ctx = null; master = null; } wake(); },
+    soft() { if (ctx) ready(); },
     /* кубик: жоғары өрлейтін тиктер + соңында «поп» */
     roll() { play(t => {
       for (let i = 0; i < 7; i++) { tone(t + i * 0.055, 'triangle', 600 + i * 120, 0, 0.05, 0.35); click(t + i * 0.055, 3500, 5, 0.02, 0.3); }
@@ -221,10 +223,10 @@ const SFX = (() => {
 /* браузер дыбысты тек бірінші басқаннан кейін ашады */
 ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => SFX.unlock(), { passive: true }));
 /* мини-аппқа қайта кіргенде / Telegram-ға оралғанда дыбыс жүйесін қайта қосу */
-document.addEventListener('visibilitychange', () => { if (!document.hidden) SFX.unlock(); });
-window.addEventListener('focus', () => SFX.unlock());
-window.addEventListener('pageshow', () => SFX.unlock());
-try { tg && tg.onEvent && (tg.onEvent('activated', () => SFX.unlock()), tg.onEvent('viewportChanged', () => SFX.unlock())); } catch (e) {}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) SFX.soft(); });
+window.addEventListener('focus', () => SFX.soft());
+window.addEventListener('pageshow', () => SFX.soft());
+try { tg && tg.onEvent && (tg.onEvent('activated', () => SFX.soft()), tg.onEvent('viewportChanged', () => SFX.soft())); } catch (e) {}
 
 /* ---------- Күй ---------- */
 const S = { players: null, playersAt: 0, dnd: false, inv: null, ws: null, me: null, bot: '', room: null, queue: null, queueEnd: 0, game: null, gameEnd: 0, rollSeq: -1, lastTurnMine: false, noReconnect: false, dieBusy: {}, moveSeq: null, animating: false, latest: null, chat: [], unread: 0, app: '' };
@@ -241,7 +243,10 @@ function show(id) {
   updNav(); onScreen(id);
 }
 function toast(text, bottom) {
-  const el = $('toast'); el.textContent = text; el.classList.toggle('toast-bottom', !!bottom); el.classList.remove('hidden');
+  const el = $('toast'); el.textContent = text; el.classList.toggle('toast-bottom', !!bottom);
+  el.style.top = bottom ? 'auto' : ''; el.style.bottom = bottom ? 'calc(env(safe-area-inset-bottom, 0px) + 28px)' : '';
+  el.style.maxWidth = bottom ? 'calc(100% - 28px)' : ''; el.style.textAlign = bottom ? 'center' : '';
+  el.classList.remove('hidden');
   clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.add('hidden'), 2600);
 }
 const send = o => { if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(o)); };
