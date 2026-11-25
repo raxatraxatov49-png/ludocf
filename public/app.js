@@ -115,8 +115,28 @@ const SFX = (() => {
         const d = nbuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       }
       if (ctx.state === 'suspended') ctx.resume();
+      loadAll();
       return ctx;
     } catch (e) { return null; }
+  };
+  // видеодан алынған нақты дыбыстар (public/sounds/*.mp3); жүктелмесе, төмендегі синтез қолданылады
+  const FILES = { roll: 'sounds/roll.mp3', step: 'sounds/step.mp3', star: 'sounds/star.mp3' };
+  const bufs = {}; let loading = false;
+  const loadAll = () => {
+    if (loading || !ctx) return; loading = true;
+    Object.keys(FILES).forEach(k => {
+      try {
+        fetch(FILES[k]).then(r => r.arrayBuffer())
+          .then(ab => new Promise((res, rej) => { const p = ctx.decodeAudioData(ab, res, rej); if (p && p.catch) p.catch(rej); }))
+          .then(b => { bufs[k] = b; }).catch(() => { loading = false; });
+      } catch (e) {}
+    });
+  };
+  const playFile = (k, vol) => {
+    const b = bufs[k]; if (!b) return false;
+    const s = ctx.createBufferSource(); s.buffer = b;
+    const g = ctx.createGain(); g.gain.value = vol || 1;
+    s.connect(g); g.connect(master); s.start(); return true;
   };
   const env = (g, t, a, dur, vol) => {
     g.gain.setValueAtTime(0.0001, t);
@@ -140,7 +160,7 @@ const SFX = (() => {
     unlock: ensure,
     // кубик: жылдам сатыр-сұтыр + соңғы соққы
     roll() {
-      if (!ensure()) return; const t = ctx.currentTime;
+      if (!ensure()) return; if (playFile('roll', 1)) return; const t = ctx.currentTime;
       [0, 0.06, 0.13, 0.21, 0.30, 0.40, 0.52].forEach((dt, i) => {
         const v = 0.55 - i * 0.05;
         burst(t + dt, 0.05, 1500 + Math.random() * 1800, 5, v);
@@ -150,13 +170,13 @@ const SFX = (() => {
     },
     // тас бір ұяшыққа жүргенде
     step() {
-      if (!ensure()) return; const t = ctx.currentTime;
+      if (!ensure()) return; if (playFile('step', 1)) return; const t = ctx.currentTime;
       tone(560, 470, t, 0.09, 'triangle', 0.5);
       burst(t, 0.03, 1800, 3, 0.25);
     },
     // жұлдызға тұрғанда
     star() {
-      if (!ensure()) return; const t = ctx.currentTime;
+      if (!ensure()) return; if (playFile('star', 1)) return; const t = ctx.currentTime;
       [988, 1319, 1760, 2349].forEach((f, i) => {
         tone(f, f, t + i * 0.08, 0.55, 'sine', 0.28, 0.01);
         tone(f * 2.01, f * 2.01, t + i * 0.08, 0.3, 'sine', 0.07, 0.01);
