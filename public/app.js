@@ -447,18 +447,42 @@ function setDie(c, v) {
   const on = PIPS[v] || [];
   for (let k = 0; k < 9; k++) d.children[k].classList.toggle('on', on.includes(k));
 }
+// нақты 3D текше: 6 беті бар, тұрған орнында секіріп, айналып, лақтырылған санмен қонады
+function cubeFaces(v) {
+  const pairs = [[1, 6], [2, 5], [3, 4]];
+  const rest = pairs.filter(p => p[0] !== v && p[1] !== v);
+  const val = { front: v, back: 7 - v, right: rest[0][0], left: rest[0][1], top: rest[1][0], bottom: rest[1][1] };
+  return Object.keys(val).map(k => {
+    const on = PIPS[val[k]] || [];
+    let h = '';
+    for (let q = 0; q < 9; q++) h += '<i' + (on.includes(q) ? ' class="on"' : '') + '></i>';
+    return '<div class="face ' + k + '">' + h + '</div>';
+  }).join('');
+}
 function rollDie(c, v) {
   const d = dieEl(c);
   if (!d) return;
   S.dieBusy[c] = true;
-  d.classList.remove('rolling', 'land', 'ready'); void d.offsetWidth; d.classList.add('rolling');
+  clearTimeout(d._rt);
+  const old = d.querySelector('.cube'); if (old) old.remove();
+  d.classList.remove('land', 'ready');
+  const cube = document.createElement('div');
+  cube.className = 'cube';
+  cube.innerHTML = cubeFaces(v);
+  d.appendChild(cube);
+  d.classList.add('rolling3d');
   const pc = $('card' + c); if (pc) pc.classList.add('rollz');
   SFX.roll();
-  let n = 0;
-  const iv = setInterval(() => {
-    if (++n >= 9) { clearInterval(iv); setDie(c, v); S.dieBusy[c] = false; d.classList.remove('rolling'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); setTimeout(() => d.classList.remove('land'), 520); const pc2 = $('card' + c); if (pc2) pc2.classList.remove('rollz'); }
-    else setDie(c, 1 + Math.floor(Math.random() * 6));
-  }, 80);
+  d._rt = setTimeout(() => {
+    setDie(c, v);
+    cube.remove();
+    d.classList.remove('rolling3d');
+    void d.offsetWidth; d.classList.add('land');
+    setTimeout(() => d.classList.remove('land'), 520);
+    S.dieBusy[c] = false;
+    const pc2 = $('card' + c); if (pc2) pc2.classList.remove('rollz');
+    if (S.latest) renderGame(S.latest);
+  }, 820);
 }
 
 function renderGame(g) {
