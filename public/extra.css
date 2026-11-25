@@ -128,9 +128,11 @@
 @keyframes hdot{50%{transform:scale(.6);opacity:.55}}
 @keyframes hmine{50%{transform:scale(1.04)}}
 @media (prefers-reduced-motion:reduce){#game .hint.mine,#game .hint::before{animation:none}}
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
-  overscroll-behavior-x: none;
-  touch-action: pan-y;
-}
+
+/* ойыншылар бөлімі: бүйірге қарай жылжымасын */
+html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
+.screen{overflow-x:hidden}
+#players{overflow-x:hidden;overscroll-behavior:none;touch-action:pan-y}
+.dndhint,.dndnote{box-sizing:border-box;width:calc(100% - 4px)}
+#players .sbar,#players .plscroll{box-sizing:border-box;min-width:0}
+#players .pl{min-width:0;max-width:100%;box-sizing:border-box}
