@@ -182,8 +182,8 @@ function show(id) {
   S.screen = id;
   updNav(); onScreen(id);
 }
-function toast(text) {
-  const el = $('toast'); el.textContent = text; el.classList.remove('hidden');
+function toast(text, bottom) {
+  const el = $('toast'); el.textContent = text; el.classList.toggle('toast-bottom', !!bottom); el.classList.remove('hidden');
   clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.add('hidden'), 2600);
 }
 const send = o => { if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(o)); };
@@ -836,7 +836,7 @@ function onMsg(m) {
     }
     case 'error':
       if (m.code === 'replaced') S.noReconnect = true;
-      toast(m.code === 'pinvite_cool' ? t('pinvite_cool') + ' ' + fmtSec(m.left || 0) : t(m.code));
+      toast(m.code === 'pinvite_cool' ? t('pinvite_cool') + ' ' + fmtSec(m.left || 0) : t(m.code), m.code === 'pinvite_dnd');
       if (S.screen === 'players') reqPlayers();
       break;
     case 'replaced':
