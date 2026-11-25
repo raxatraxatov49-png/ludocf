@@ -153,14 +153,14 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 .gonemark:empty{display:none}
 
 /* ойыншылар тізімі (шашка бот стилі) */
-.plsec{margin:20px 4px 10px;font-size:15px;font-weight:800;letter-spacing:1.5px;color:#9a9a9a;text-transform:uppercase}
-#players .pl{background:#202020;border:0;border-radius:22px;padding:14px 16px;gap:14px;margin-bottom:12px}
-#players .pl .ava{width:58px;height:58px;border-radius:50%;font-size:22px;color:#fff;font-weight:800}
-#players .pl .dot{width:18px;height:18px;right:-2px;bottom:-2px;border:3px solid #202020}
-#players .pl .nm b{font-size:19px}
-#players .pl .st{display:block;margin-top:3px;font-size:15px;font-weight:600}
+.plsec{margin:14px 4px 8px;font-size:12px;font-weight:800;letter-spacing:1.2px;color:#9a9a9a;text-transform:uppercase}
+#players .pl{background:#202020;border:0;border-radius:16px;padding:8px 10px;gap:10px;margin-bottom:6px}
+#players .pl .ava{width:40px;height:40px;border-radius:50%;font-size:15px;color:#fff;font-weight:800}
+#players .pl .dot{width:12px;height:12px;right:-2px;bottom:-2px;border:2px solid #202020}
+#players .pl .nm b{font-size:15px}
+#players .pl .st{display:block;margin-top:1px;font-size:12px;font-weight:600}
 .st.online{color:#4cc46a}.st.game{color:#f0c050}.st.offline{color:#8c8c8c;font-weight:500}
-#players .pb{background:#f2f2f2;color:#111;border-radius:16px;padding:12px 18px;font-size:17px;font-weight:800}
+#players .pb{background:#f2f2f2;color:#111;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:800}
 #players .pb.watch{background:#f2f2f2;color:#111}
 #players .pb.wait{background:#3a3a3a;color:#fff;border:0}
 #players .pb.off,#players .pb:disabled{background:transparent;color:#777;border:1px solid #3a3a3a}
