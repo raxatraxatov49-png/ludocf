@@ -19,21 +19,21 @@ const I18N = {
     winner: 'Жеңімпаз', toMenu: 'Мәзірге', leaveAsk: 'Ойыннан шығасың ба?', leave: 'Шығу', stay: 'Қалу',
     hintRoll: 'Сенің кезегің — сүйекті бас', hintMove: 'Фишканы таңда', hintOther: 'жүріс жасауда…',
     inviteText: 'Менімен Лудо ойнайық! 🎲', room_gone: 'Бөлме табылмады', room_full: 'Бөлме толы', auth: 'Кіру қатесі',
-    replaced: 'Басқа құрылғыда ашылды', noBot: 'Боттың username-і көрсетілмеген' },
+    blocked: 'Сіз блокталдыңыз 🚫', replaced: 'Басқа құрылғыда ашылды', noBot: 'Боттың username-і көрсетілмеген' },
   uz: { menu: 'Menyu', surrender: 'Taslim bo‘laman', closeX: 'Yopish', lastSeen: 'oxirgi kirish', justNow: 'hozirgina', leftMark: 'Chiqdi', kicked: 'Jonlaring tugadi, o‘yindan chiqarilding', role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
     friendTitle: 'Do‘st bilan o‘ynash', friendDesc: 'Xona och va do‘stlaringni taklif qil', friendBtn: 'DO‘ST BILAN O‘YNASH', connecting: 'Ulanmoqda…',
     waiting: 'O‘yinchilar kutilmoqda', you: 'Siz', invite: 'Taklif qilish', startGame: 'O‘yinni boshlash', cancel: 'Bekor qilish',
     winner: 'G‘olib', toMenu: 'Menyuga', leaveAsk: 'O‘yindan chiqasanmi?', leave: 'Chiqish', stay: 'Qolish',
     hintRoll: 'Navbating — kubikni bos', hintMove: 'Toshni tanla', hintOther: 'yurmoqda…',
     inviteText: 'Men bilan Ludo o‘ynaymiz! 🎲', room_gone: 'Xona topilmadi', room_full: 'Xona to‘la', auth: 'Kirish xatosi',
-    replaced: 'Boshqa qurilmada ochildi', noBot: 'Bot username ko‘rsatilmagan' },
+    blocked: 'Siz bloklandingiz 🚫', replaced: 'Boshqa qurilmada ochildi', noBot: 'Bot username ko‘rsatilmagan' },
   ru: { menu: 'Меню', surrender: 'Сдаюсь', closeX: 'Закрыть', lastSeen: 'был(а)', justNow: 'только что', leftMark: 'Вышел', kicked: 'Жизни закончились, вы выбыли из игры', role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
     friendTitle: 'Играть с другом', friendDesc: 'Создай комнату и пригласи друзей', friendBtn: 'ИГРАТЬ С ДРУГОМ', connecting: 'Подключение…',
     waiting: 'Ожидание игроков', you: 'Вы', invite: 'Пригласить', startGame: 'Начать игру', cancel: 'Отмена',
     winner: 'Победитель', toMenu: 'В меню', leaveAsk: 'Выйти из игры?', leave: 'Выйти', stay: 'Остаться',
     hintRoll: 'Твой ход — брось кубик', hintMove: 'Выбери фишку', hintOther: 'ходит…',
     inviteText: 'Сыграем в Лудо! 🎲', room_gone: 'Комната не найдена', room_full: 'Комната заполнена', auth: 'Ошибка входа',
-    replaced: 'Открыто на другом устройстве', noBot: 'Не указан username бота' }
+    blocked: 'Вы заблокированы 🚫', replaced: 'Открыто на другом устройстве', noBot: 'Не указан username бота' }
 };
 
 const EXTRA = {
@@ -742,7 +742,7 @@ function connect() {
   };
   ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } onMsg(m); };
   ws.onclose = () => {
-    if (S.ws !== ws) return;
+    if (S.ws !== ws || S.blocked) return;
     $('conn').classList.remove('hidden');
     if (!S.noReconnect) setTimeout(connect, 1500);
   };
@@ -838,6 +838,16 @@ function onMsg(m) {
     case 'replaced':
       S.noReconnect = true; toast(t('replaced'));
       break;
+    case 'blocked': {
+      S.noReconnect = true; S.blocked = true;
+      $('conn').classList.add('hidden');
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#12141c;color:#fff;font:600 22px/1.3 system-ui,sans-serif;text-align:center;padding:24px';
+      ov.innerHTML = '<div style="font-size:64px">🚫</div><div></div>';
+      ov.lastChild.textContent = t('blocked');
+      document.body.appendChild(ov);
+      break;
+    }
   }
 }
 
