@@ -254,3 +254,32 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
 @keyframes ripple{0%{opacity:.95;transform:scale(.92)}100%{opacity:0;transform:scale(1.6)}}
 .die.ready{animation:pulse 1s infinite ease-in-out}
 @media (prefers-reduced-motion:reduce){.die.rolling{animation-duration:.3s}}
+
+/* ===== v3: өлшемдер шашка боттағыдай (v2-ден үлкенірек) ===== */
+#menu{padding-top:calc(var(--sat) + 12px)}
+.menuwrap{gap:12px}
+.prof{padding:10px 12px;border-radius:20px;gap:12px}
+.ringava{width:54px;height:54px;border-width:3px;padding:3px}
+.crown{font-size:19px;top:-15px}
+.pn b{font-size:19px}.pn small{font-size:14px}
+.hero{padding:18px 16px 16px;border-radius:24px}
+.hero h2{font-size:25px;margin-bottom:6px}
+.hero p{font-size:14.5px;margin-bottom:14px}
+.hero button{padding:15px;border-radius:17px;font-size:16px;letter-spacing:2px;gap:10px}
+.gold{box-shadow:0 4px 0 #b98322,0 8px 18px rgba(0,0,0,.35)}
+.blue{box-shadow:0 4px 0 #2a4e9e,0 8px 18px rgba(0,0,0,.35)}
+.tri{border-left-width:12px;border-top-width:7px;border-bottom-width:7px}
+.row{padding:12px 14px;border-radius:22px;gap:12px}
+.row .ico{width:48px;height:48px;border-radius:14px;font-size:25px}
+.row .rt b{font-size:19px}.row .rt em{font-size:15px}.row .rt em::before{width:12px;height:12px}
+.row .chev{font-size:30px}
+.wtitle{font-size:24px}
+.pill{padding:15px;border-radius:17px;font-size:15px;letter-spacing:1.5px;margin-bottom:12px;box-shadow:0 4px 0 #b98322,0 8px 18px rgba(0,0,0,.35)}
+
+/* төменгі панель және «Берілемін / Жабу» */
+.gbar{left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));border-radius:24px;padding:5px}
+.gbar .gb{padding:14px 8px;font-size:16px;gap:9px;border-radius:19px}
+.gbar .gb svg{width:22px;height:22px}
+.sheet{padding:14px 14px max(24px,env(safe-area-inset-bottom));gap:10px;border-radius:26px 26px 0 0}
+.sbtn{padding:17px;border-radius:19px;font-size:17px}
+#game,#wait{padding-bottom:calc(76px + max(12px,env(safe-area-inset-bottom)))}
