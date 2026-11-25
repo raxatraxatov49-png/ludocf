@@ -150,3 +150,6 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 #players .pl .nm b{font-size:16px;font-weight:800}
 #players .pl .st{font-size:13px}
 #players .pb{padding:8px 14px;font-size:14.5px;font-weight:800;border-radius:14px;line-height:1.2}
+
+/* ойын тақтасы: жоғарғы профиль тақтаға төменгі профильдей жақын тұрсын */
+#game .bar.top{margin-bottom:calc(3px - min(100vw - 16px, 520px) * .0556)}
