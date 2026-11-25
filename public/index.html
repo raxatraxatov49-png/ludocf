@@ -61,22 +61,23 @@
   <button id="btnStart" class="pill go hidden" data-i18n="startGame"></button>
   <button id="btnCancel" class="pill ghost hidden" data-i18n="cancel"></button>
   <button id="btnWaitBack" class="fab left" aria-label="menu">☰</button>
+  <button id="btnChatW" class="fab right chatbtn hidden" aria-label="chat">💬<b class="badge hidden"></b></button>
 </main>
 
 <!-- Ойын -->
 <main id="game" class="screen">
   <div class="bar top">
     <div class="pcard" id="card0"></div>
-    <button id="dice" class="dice" aria-label="dice"></button>
     <div class="pcard" id="card1"></div>
   </div>
-  <div class="boardwrap"><svg id="board" viewBox="0 0 15 15"></svg></div>
+  <div class="boardwrap"><svg id="board" viewBox="-0.5 -0.5 16 16"></svg></div>
   <div class="bar bottom">
     <div class="pcard" id="card3"></div>
     <div class="pcard" id="card2"></div>
   </div>
   <div id="hint" class="hint"></div>
   <button id="btnGameBack" class="fab left" aria-label="menu">☰</button>
+  <button id="btnChatG" class="fab right chatbtn" aria-label="chat">💬<b class="badge hidden"></b></button>
   <div id="over" class="over hidden">
     <div class="obox">
       <div class="otitle" data-i18n="winner"></div>
@@ -103,6 +104,14 @@
     <button id="invYes" class="pill go" data-i18n="accept"></button>
     <button id="invNo" class="pill ghost" data-i18n="decline"></button>
   </div>
+</div>
+
+<!-- Чат -->
+<div id="chat" class="chat hidden">
+  <div class="chead"><b data-i18n="chatTitle"></b><button id="chatClose" type="button" aria-label="close">✕</button></div>
+  <div id="chatList" class="clist"></div>
+  <div class="cquick"><button type="button">👍</button><button type="button">😂</button><button type="button">😡</button><button type="button">🔥</button><button type="button">😎</button><button type="button">GG</button></div>
+  <div class="cform"><input id="chatInput" maxlength="200" autocomplete="off" data-i18n-ph="chatPh"><button id="chatSend" type="button" aria-label="send">➤</button></div>
 </div>
 
 <div id="toast" class="toast hidden"></div>
