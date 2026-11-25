@@ -204,7 +204,7 @@ function snapshot(g, spectator) {
     spectator: Boolean(spectator),
     viewers: g.watchers.size,
     id: g.id,
-    seats: g.seats.map(s => ({ color: s.color, id: s.uid, name: s.name, avatar: s.avatar, auto: s.auto, left: s.left, dice: s.shown })),
+    seats: g.seats.map(s => ({ color: s.color, id: s.uid, name: s.name, avatar: s.avatar, auto: s.auto, left: s.left, lives: s.lives == null ? 3 : s.lives, dice: s.shown })),
     tokens: g.tokens,
     turn: cur(g).color,
     phase: g.phase,
@@ -246,7 +246,7 @@ function startGame(list) {
   const colors = L.COLORS_FOR[list.length];
   const g = {
     id: 'g' + (++gameSeq),
-    seats: list.map((u, i) => ({ uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, left: false, shown: 1 + Math.floor(Math.random() * 6) })),
+    seats: list.map((u, i) => ({ uid: u.id, name: u.name, avatar: u.avatar || null, color: colors[i], auto: false, miss: 0, lives: 3, left: false, shown: 1 + Math.floor(Math.random() * 6) })),
     tokens: L.newTokens(colors),
     turnIdx: 0, phase: 'roll', dice: null, legal: [], rollSeq: 0, rollColor: null, moveSeq: 0, chat: [], sixes: 0,
     deadline: 0, timer: null, watchers: new Set(), winner: null, reason: null, last: null, at: Date.now(), emptySince: 0
@@ -275,9 +275,26 @@ function beginTurn(g) {
 function onTimeout(g) {
   if (g.winner !== null) return;
   const seat = cur(g);
-  if (!seat.auto) { seat.miss++; if (seat.miss >= 3) seat.auto = true; }
-  if (g.phase === 'roll') roll(g);
-  else if (g.phase === 'move') moveToken(g, L.best(g.tokens, seat.color, g.dice, g.legal));
+  // 25 секундта жүрмесе: 1 жан кетеді, кезек келесі адамға өтеді
+  if (seat.lives == null) seat.lives = 3;
+  seat.lives--;
+  if (seat.lives <= 0) return eliminate(g, seat);
+  nextTurn(g);
+}
+
+// жаны таусылған ойыншы ойыннан шығарылады, қалғандар жалғастырады
+function eliminate(g, seat) {
+  seat.left = true;
+  seat.auto = true;
+  seat.lives = 0;
+  const u = users.get(seat.uid);
+  if (u && u.game === g.id) { u.game = null; send(u, { t: 'kicked' }); send(u, { t: 'idle' }); }
+  const alive = g.seats.filter(x => !x.left);
+  if (alive.length <= 1) {
+    if (alive.length === 1) return finish(g, alive[0].color, 'left');
+    return destroyGame(g);
+  }
+  if (cur(g) === seat) nextTurn(g); else broadcastGame(g);
 }
 
 function roll(g) {
@@ -343,7 +360,6 @@ function leaveGame(u) {
   if (!seat || seat.left || g.winner !== null) { if (g.winner !== null) maybeDrop(g); return; }
   seat.left = true;
   seat.auto = true;
-  g.tokens[seat.color] = null;           // шыққан ойыншының фишкалары тақтадан алынады
   const alive = g.seats.filter(s => !s.left);
   if (alive.length <= 1) {
     if (alive.length === 1) return finish(g, alive[0].color, 'left');
@@ -612,7 +628,7 @@ function onClose(ws) {
   unwatch(u);
   touchProfile(u, true);
   const g = games.get(u.game);
-  if (g) { const seat = seatOf(g, u.id); if (seat) seat.auto = true; }   // үзілсе, ойынды автомат жалғастырады
+  // байланыс үзілсе, автомат жүрмейді: 25 секундта жүрмесе жаны кете береді
 }
 
 const wss = new WebSocketServer({ path: '/ws' });
