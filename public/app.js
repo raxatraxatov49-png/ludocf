@@ -13,21 +13,21 @@ const qs = new URLSearchParams(location.search);
 
 /* ---------- Тіл ---------- */
 const I18N = {
-  kk: { lastSeen: 'соңғы кіру', justNow: 'жаңа ғана', leftMark: 'Шықты', kicked: 'Жаның таусылды, ойыннан шығарылдың', role: 'Лудо ойыншысы', randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
+  kk: { menu: 'Мәзір', surrender: 'Берілемін', closeX: 'Жабу', lastSeen: 'соңғы кіру', justNow: 'жаңа ғана', leftMark: 'Шықты', kicked: 'Жаның таусылды, ойыннан шығарылдың', role: 'Лудо ойыншысы', randomTitle: 'Кездейсоқ ойын', randomDesc: 'Қазір ойнағысы келетіндермен ойна (2–4 ойыншы)', play: 'ОЙНАУ',
     friendTitle: 'Доспен ойнау', friendDesc: 'Бөлме аш та, достарыңды шақыр', friendBtn: 'ДОСПЕН ОЙНАУ', connecting: 'Қосылуда…',
     waiting: 'Ойыншылар күтілуде', you: 'Сіз', invite: 'Шақыру', startGame: 'Ойынды бастау', cancel: 'Бас тарту',
     winner: 'Жеңімпаз', toMenu: 'Мәзірге', leaveAsk: 'Ойыннан шығасың ба?', leave: 'Шығу', stay: 'Қалу',
     hintRoll: 'Сенің кезегің — сүйекті бас', hintMove: 'Фишканы таңда', hintOther: 'жүріс жасауда…',
     inviteText: 'Менімен Лудо ойнайық! 🎲', room_gone: 'Бөлме табылмады', room_full: 'Бөлме толы', auth: 'Кіру қатесі',
     replaced: 'Басқа құрылғыда ашылды', noBot: 'Боттың username-і көрсетілмеген' },
-  uz: { lastSeen: 'oxirgi kirish', justNow: 'hozirgina', leftMark: 'Chiqdi', kicked: 'Jonlaring tugadi, o‘yindan chiqarilding', role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
+  uz: { menu: 'Menyu', surrender: 'Taslim bo‘laman', closeX: 'Yopish', lastSeen: 'oxirgi kirish', justNow: 'hozirgina', leftMark: 'Chiqdi', kicked: 'Jonlaring tugadi, o‘yindan chiqarilding', role: 'Ludo o‘yinchisi', randomTitle: 'Tasodifiy o‘yin', randomDesc: 'Hozir o‘ynashni xohlovchilar bilan o‘yna (2–4 o‘yinchi)', play: 'O‘YNASH',
     friendTitle: 'Do‘st bilan o‘ynash', friendDesc: 'Xona och va do‘stlaringni taklif qil', friendBtn: 'DO‘ST BILAN O‘YNASH', connecting: 'Ulanmoqda…',
     waiting: 'O‘yinchilar kutilmoqda', you: 'Siz', invite: 'Taklif qilish', startGame: 'O‘yinni boshlash', cancel: 'Bekor qilish',
     winner: 'G‘olib', toMenu: 'Menyuga', leaveAsk: 'O‘yindan chiqasanmi?', leave: 'Chiqish', stay: 'Qolish',
     hintRoll: 'Navbating — kubikni bos', hintMove: 'Toshni tanla', hintOther: 'yurmoqda…',
     inviteText: 'Men bilan Ludo o‘ynaymiz! 🎲', room_gone: 'Xona topilmadi', room_full: 'Xona to‘la', auth: 'Kirish xatosi',
     replaced: 'Boshqa qurilmada ochildi', noBot: 'Bot username ko‘rsatilmagan' },
-  ru: { lastSeen: 'был(а)', justNow: 'только что', leftMark: 'Вышел', kicked: 'Жизни закончились, вы выбыли из игры', role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
+  ru: { menu: 'Меню', surrender: 'Сдаюсь', closeX: 'Закрыть', lastSeen: 'был(а)', justNow: 'только что', leftMark: 'Вышел', kicked: 'Жизни закончились, вы выбыли из игры', role: 'Игрок в Лудо', randomTitle: 'Случайная игра', randomDesc: 'Играй с теми, кто ищет партию (2–4 игрока)', play: 'ИГРАТЬ',
     friendTitle: 'Играть с другом', friendDesc: 'Создай комнату и пригласи друзей', friendBtn: 'ИГРАТЬ С ДРУГОМ', connecting: 'Подключение…',
     waiting: 'Ожидание игроков', you: 'Вы', invite: 'Пригласить', startGame: 'Начать игру', cancel: 'Отмена',
     winner: 'Победитель', toMenu: 'В меню', leaveAsk: 'Выйти из игры?', leave: 'Выйти', stay: 'Остаться',
@@ -532,8 +532,7 @@ function renderWait() {
   });
   $('btnInvite').classList.toggle('hidden', !room);                         // шақыру: бөлмедегі барлығына
   $('btnStart').classList.toggle('hidden', !(isHost && list.length >= 2));   // бастау: тек жаратушыға, ≥2 адамда
-  $('btnChatW').classList.toggle('hidden', !room);
-  $('btnWaitBack').classList.toggle('hidden', !room);                       // есік тек доспен ойында (кездейсоқта «Бас тарту» бар)
+  $('wBar').classList.toggle('hidden', !room);                              // мәзір/чат тек доспен ойында (кездейсоқта «Бас тарту» бар)
   $('btnCancel').classList.toggle('hidden', !q || Boolean(room));            // кездейсоқ іздеуде ғана
   $('wTimer').style.display = room ? 'none' : '';
   tick();
@@ -787,7 +786,13 @@ $('btnFriend').onclick = () => send({ t: 'room_create' });
 $('btnInvite').onclick = invite;
 $('btnStart').onclick = () => send({ t: 'room_start' });
 $('btnCancel').onclick = () => { send({ t: 'cancel' }); show('menu'); };
-$('btnWaitBack').onclick = () => { $('ask').classList.remove('hidden'); };
+function openAsk(kind) {
+  $('askYes').textContent = t(kind === 'surrender' ? 'surrender' : 'leave');
+  $('askYes').dataset.kind = kind;
+  $('ask').classList.remove('hidden');
+}
+$('btnWaitBack').onclick = () => openAsk('exit');
+$('ask').onclick = e => { if (e.target === $('ask')) $('ask').classList.add('hidden'); };
 $('btnChatG').onclick = openChat;
 $('btnChatW').onclick = openChat;
 $('chatClose').onclick = () => $('chat').classList.add('hidden');
@@ -795,14 +800,14 @@ $('chatSend').onclick = () => { sendChat($('chatInput').value); $('chatInput').v
 $('chatInput').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('chatSend').click(); } };
 document.querySelectorAll('.cquick button').forEach(b => { b.onclick = () => sendChat(b.textContent); });
 $('btnGameBack').onclick = () => {
-  if (S.game && S.game.spectator) return leaveWatch();
-  if (S.game && S.game.winner !== null) return $('btnOver').click();
-  $('ask').classList.remove('hidden');
+  if (S.game && S.game.winner !== null && !S.game.spectator) return $('btnOver').click();
+  openAsk(S.game && S.game.spectator ? 'exit' : 'surrender');
 };
 $('askNo').onclick = () => $('ask').classList.add('hidden');
 $('askYes').onclick = () => {
   $('ask').classList.add('hidden');
   if (S.screen === 'wait') { send({ t: S.room ? 'room_leave' : 'cancel' }); S.room = null; S.queue = null; show('menu'); return; }
+  if (S.game && S.game.spectator) return leaveWatch();
   send({ t: 'leave' }); S.game = null; show('menu');
 };
 $('btnOver').onclick = () => { if (S.game && S.game.spectator) return leaveWatch(); $('over').classList.add('hidden'); send({ t: 'leave' }); S.game = null; show('menu'); };
