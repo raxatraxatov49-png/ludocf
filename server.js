@@ -1103,7 +1103,14 @@ function giveVip(p, days) {
   tgApi('sendMessage', { chat_id: p.id, text: L10.vip[langOf(p)](days) }).catch(() => {});
 }
 
-function statsText() {
+async function storageLine() {
+  if (!UP) return '💾 Сақтау: <b>Durable Object</b> (Upstash қосылмаған)';
+  try {
+    const out = await upCmd([['HLEN', 'ludo:p']]);
+    return `💾 Сақтау: <b>Upstash Redis ✅</b>\n🗂 Redis-тегі профильдер: <b>${out[0].result}</b>` + (upPend.size ? ` (жазылуды күтуде: ${upPend.size})` : '');
+  } catch (e) { return '💾 Сақтау: <b>Upstash ⚠️ қате</b>: ' + esc(e && e.message); }
+}
+async function statsText() {
   const now = Date.now();
   const startToday = Math.floor((now + 5 * 3600000) / DAY_MS) * DAY_MS - 5 * 3600000;   // UTC+5 бойынша «бүгін»
   let total = 0, today = 0, vip = 0, blocked = 0, online = 0;
@@ -1124,7 +1131,8 @@ function statsText() {
     + `👑 VIP: <b>${vip}</b>\n`
     + `🚫 Блокталғандар: <b>${blocked}</b>\n\n`
     + `🎮 Қазір жүріп жатқан ойындар: <b>${live}</b>\n`
-    + `🏁 Барлығы ойналған ойындар: <b>${stats.games}</b>`;
+    + `🏁 Барлығы ойналған ойындар: <b>${stats.games}</b>\n\n`
+    + await storageLine();
 }
 
 const BACK = { inline_keyboard: [[{ text: '⬅️ Артқа', callback_data: 'a:menu' }]] };
@@ -1191,7 +1199,7 @@ async function adminCb(cb) {
   const ask = (step, text) => { adminState.set(from, { step, panel: mid }); return say(chat, text, BACK, mid); };
   switch (d) {
     case 'a:menu': return showMenu(chat, from, mid);
-    case 'a:stats': adminState.delete(from); return say(chat, statsText(), BACK, mid);
+    case 'a:stats': adminState.delete(from); return say(chat, await statsText(), BACK, mid);
     case 'a:block': return ask('block', '🚫 Блоктау\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
     case 'a:unblock': return ask('unblock', '✅ Блоктан шығару\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
     case 'a:vip': return ask('vip_user', '👑 VIP беру\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
