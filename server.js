@@ -844,13 +844,13 @@ setInterval(safe(() => {
 /* ================= Telegram бот ================= */
 
 const TXT = {
-  kk: { start: '🎲 <b>Ludo ойынына қош келдің!</b>\n\n🔥 Достарыңмен ойна, қарсыластарыңды жең және нағыз Ludo чемпионы атан!\n\n👇 Ойынды бастау үшін төмендегі батырманы бас!', play: '🎮 ОЙНАУ', cmd: 'Ойынды ашу', helpCmd: 'Көмек', rulesCmd: 'Ойын ережелері', langCmd: 'Тілді өзгерту', langPrompt: '🌐 Тілді таңдаңыз:', langSet: '✅ Тіл: Қазақша',
+  kk: { start: '🎲 <b>Ludo ойынына қош келдің!</b>\n\n🔥 Достарыңмен ойна, қарсыластарыңды жең және нағыз Ludo чемпионы атан!\n\n👇 Ойынды бастау үшін төмендегі батырманы бас!\n\n🌐 Тіл: /language', play: '🎮 ОЙНАУ', cmd: 'Ойынды ашу', helpCmd: 'Көмек', rulesCmd: 'Ойын ережелері', langCmd: 'Тілді өзгерту', langPrompt: '🌐 Тілді таңдаңыз:', langSet: '✅ Тіл қойылды: Қазақша',
     help: '🎲 <b>Лудо</b>\n/start — ойынды ашу\n/rules — ережелер\n/help — көмек\n/language — тіл',
     rules: '📖 <b>Ережелер</b>\n• 6 шықса фишка үйден шығады\n• 6 / жеп алу / финишке жету — қосымша лақтыру\n• Қатарынан 3 алты — кезек өтеді\n• ☆ және бастапқы ұяшықтарда фишканы жеуге болмайды\n• Финишке дәл сан керек\n• 4 фишкасын бірінші жеткізген жеңеді\n• Бір әрекетке 25 секунд, 3 рет өткізсе ойыннан шығарылады' },
-  uz: { start: '🎲 <b>Ludo o‘yiniga xush kelibsiz!</b>\n\n🔥 Do‘stlaring bilan o‘yna, raqiblaringni yeng va haqiqiy Ludo chempioni bo‘l!\n\n👇 O‘yinni boshlash uchun quyidagi tugmani bos!', play: '🎮 O‘ynash', cmd: 'O‘yinni ochish', helpCmd: 'Yordam', rulesCmd: 'O‘yin qoidalari', langCmd: 'Tilni o‘zgartirish', langPrompt: '🌐 Tilni tanlang:', langSet: '✅ Til: O‘zbekcha',
+  uz: { start: '🎲 <b>Ludo o‘yiniga xush kelibsiz!</b>\n\n🔥 Do‘stlaring bilan o‘yna, raqiblaringni yeng va haqiqiy Ludo chempioni bo‘l!\n\n👇 O‘yinni boshlash uchun quyidagi tugmani bos!\n\n🌐 Til: /language', play: '🎮 O‘ynash', cmd: 'O‘yinni ochish', helpCmd: 'Yordam', rulesCmd: 'O‘yin qoidalari', langCmd: 'Tilni o‘zgartirish', langPrompt: '🌐 Tilni tanlang:', langSet: '✅ Til o‘rnatildi: O‘zbekcha',
     help: '🎲 <b>Ludo</b>\n/start — o‘yinni ochish\n/rules — qoidalar\n/help — yordam\n/language — til',
     rules: '📖 <b>Qoidalar</b>\n• 6 tushsa, tosh uydan chiqadi\n• 6 / urib olish / marraga yetish — qo‘shimcha tashlash\n• Ketma-ket 3 ta oltilik — navbat o‘tadi\n• ☆ va boshlang‘ich kataklarda toshni urib bo‘lmaydi\n• Marraga aniq son kerak\n• 4 toshini birinchi yetkazgan g‘olib\n• Har yurishga 25 soniya, 3 marta o‘tkazsa o‘yindan chiqariladi' },
-  ru: { start: '🎲 <b>Добро пожаловать в Ludo!</b>\n\n🔥 Играй с друзьями, побеждай соперников и стань настоящим чемпионом Ludo!\n\n👇 Нажми кнопку ниже, чтобы начать игру!', play: '🎮 Играть', cmd: 'Открыть игру', helpCmd: 'Помощь', rulesCmd: 'Правила игры', langCmd: 'Сменить язык', langPrompt: '🌐 Выберите язык:', langSet: '✅ Язык: Русский',
+  ru: { start: '🎲 <b>Добро пожаловать в Ludo!</b>\n\n🔥 Играй с друзьями, побеждай соперников и стань настоящим чемпионом Ludo!\n\n👇 Нажми кнопку ниже, чтобы начать игру!\n\n🌐 Язык: /language', play: '🎮 Играть', cmd: 'Открыть игру', helpCmd: 'Помощь', rulesCmd: 'Правила игры', langCmd: 'Сменить язык', langPrompt: '🌐 Выберите язык:', langSet: '✅ Язык установлен: Русский',
     help: '🎲 <b>Лудо</b>\n/start — открыть игру\n/rules — правила\n/help — помощь\n/language — язык',
     rules: '📖 <b>Правила</b>\n• Фишка выходит из дома при выпадении 6\n• 6 / съедение / финиш — дополнительный бросок\n• Три шестёрки подряд — ход переходит\n• На звёздах и стартовых клетках фишку съесть нельзя\n• В финиш нужно точное число\n• Побеждает тот, кто первым приведёт 4 фишки\n• 25 секунд на ход, 3 пропуска — выбываешь из игры' }
 };
@@ -859,7 +859,7 @@ const pickLang = c => { c = String(c || '').slice(0, 2).toLowerCase(); return TX
 // Боттың жеке чаттағы тілі (/language арқылы таңдалады). Мини аппқа әсер етпейді: ол өз тілін өзі таңдайды.
 const botLangOf = from => {
   const p = from && profiles.get(String(from.id));
-  return p && TXT[p.botLang] ? p.botLang : pickLang(from && from.language_code);
+  return p && TXT[p.botLang] ? p.botLang : 'kk';   // тіл таңдалмаса — басты тіл қазақша
 };
 const LANGS = [['kk', '🇰🇿 Қазақша'], ['ru', '🇷🇺 Русский'], ['uz', '🇺🇿 O‘zbekcha']];
 const langKb = () => ({ inline_keyboard: LANGS.map(([c, n]) => [{ text: n, callback_data: 'l:' + c }]) });
@@ -873,7 +873,8 @@ async function langCb(cb) {
   const p = touchBotUser(cb.from);
   if (!p || (p.blocked && !isAdmin(p.id))) return;
   if (p.botLang !== code) { p.botLang = code; saveProfile(p); }
-  tgApi('editMessageText', { chat_id: chat, message_id: cb.message.message_id, text: TXT[code].langSet, reply_markup: langKb() }).catch(() => {});
+  tgApi('deleteMessage', { chat_id: chat, message_id: cb.message.message_id }).catch(() => {});
+  tgApi('sendMessage', { chat_id: chat, text: TXT[code].langSet }).catch(() => {});
   tgApi('setMyCommands', { commands: botCmds(code), scope: { type: 'chat', chat_id: chat } }).catch(() => {});   // команда мәзірі де таңдалған тілде болсын
 }
 
@@ -911,9 +912,9 @@ async function handleUpdate(update) {
     const fid = String(msg.from.id);
     const acmd = typeof msg.text === 'string' ? (msg.text.match(/^\/(\w+)/) || [])[1] : '';
     if (isAdmin(fid)) {
-      if (acmd === 'admin') { await showMenu(msg.chat.id, fid); return; }
-      if (acmd) adminState.delete(fid);
-      else if (await adminMsg(msg)) return;
+      if (acmd === 'admin') { track(msg.chat.id, msg.message_id); await showMenu(msg.chat.id, fid); return; }
+      if (acmd) { adminState.delete(fid); await cleanChat(msg.chat.id); }
+      else { if (adminState.has(fid)) track(msg.chat.id, msg.message_id); if (await adminMsg(msg)) return; }
     }
     if (bu && bu.blocked && !isAdmin(fid)) return;   // блокталған: жауап берілмейді
   }
@@ -1078,19 +1079,46 @@ const adminMenu = id => ({
     [{ text: '📢 Хабарлама жіберу', callback_data: 'a:bc' }]
   ].concat(isMain(id) ? [[{ text: '👮 Админдерді басқару', callback_data: 'a:admins' }]] : [])
 });
+// Админ чатындағы хабарламаларды есептеп тұрамыз (профильде сақталады), қажетсіз болғанда өшіреміз
+function track(chat, mid) {
+  const p = profiles.get(String(chat));
+  if (!p || !mid) return;
+  p.am = p.am || [];
+  if (p.am.includes(mid)) return;
+  p.am.push(mid);
+  if (p.am.length > 40) p.am.shift();
+  saveProfile(p);
+}
+// keep-тен басқа бәрін өшіреді (панель, сұрау, қателер, админ жазған хабарламалар)
+async function cleanChat(chat, keep) {
+  const p = profiles.get(String(chat));
+  if (!p || !p.am || !p.am.length) return;
+  const ids = p.am.filter(m => m !== keep);
+  p.am = keep && p.am.includes(keep) ? [keep] : [];
+  saveProfile(p);
+  await Promise.all(ids.map(m => tgApi('deleteMessage', { chat_id: chat, message_id: m }).catch(() => {})));
+}
 // mid берілсе — сол хабарламаның өзін жаңартады (жаңа хабарлама жібермейді), болмаса жаңа хабарлама жібереді
 const say = async (chat, text, kb, mid) => {
   if (mid) {
     const r = await tgApi('editMessageText', { chat_id: chat, message_id: mid, text, parse_mode: 'HTML', reply_markup: kb || undefined }).catch(() => null);
-    if (r && (r.ok || /not modified/i.test(r.description || ''))) return r;
+    if (r && (r.ok || /not modified/i.test(r.description || ''))) { track(chat, mid); return r; }
   }
-  return tgApi('sendMessage', { chat_id: chat, text, parse_mode: 'HTML', reply_markup: kb || undefined });
+  const r = await tgApi('sendMessage', { chat_id: chat, text, parse_mode: 'HTML', reply_markup: kb || undefined });
+  if (r && r.ok && r.result) track(chat, r.result.message_id);
+  return r;
 };
-const showMenu = (chat, id, mid) => { adminState.delete(String(id)); return say(chat, '🛠 <b>Админ панель</b>\nБөлімді таңдаңыз:', adminMenu(id), mid); };
+// Админ панель: ескі панель мен қалған хабарламалардың бәрі өшіріледі, тек бір ғана жаңа панель қалады
+const showMenu = async (chat, id, mid, notice) => {
+  adminState.delete(String(id));
+  await cleanChat(chat, mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + '🛠 <b>Админ панель</b>\nБөлімді таңдаңыз:', adminMenu(id), mid);
+};
 
-async function adminsScreen(chat, mid) {
+async function adminsScreen(chat, mid, notice) {
   const list = adminIds.length ? adminIds.map(i => { const p = profiles.get(i); return '• ' + (p ? label(p) : `<code>${i}</code>`); }).join('\n') : 'Қосымша админ жоқ';
-  return say(chat, `👮 <b>Админдер</b>\n\n⭐ Бас админ: <code>${MAIN_ADMIN}</code>\n\n${list}`, {
+  await cleanChat(chat, mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + `👮 <b>Админдер</b>\n\n⭐ Бас админ: <code>${MAIN_ADMIN}</code>\n\n${list}`, {
     inline_keyboard: [[{ text: '➕ Админ қосу', callback_data: 'a:adm_add' }, { text: '➖ Админді өшіру', callback_data: 'a:adm_del' }], [{ text: '⬅️ Артқа', callback_data: 'a:menu' }]]
   }, mid);
 }
@@ -1102,7 +1130,8 @@ async function adminCb(cb) {
   if (!chat || !isAdmin(from)) return;
   const d = String(cb.data || '');
   const mid = cb.message.message_id;
-  const ask = (step, text) => { adminState.set(from, { step }); return say(chat, text, BACK, mid); };
+  track(chat, mid);
+  const ask = (step, text) => { adminState.set(from, { step, panel: mid }); return say(chat, text, BACK, mid); };
   switch (d) {
     case 'a:menu': return showMenu(chat, from, mid);
     case 'a:stats': adminState.delete(from); return say(chat, statsText(), BACK, mid);
@@ -1130,13 +1159,18 @@ async function adminMsg(msg) {
   const st = adminState.get(from);
   if (!st) return false;
   const text = String(msg.text || '').trim();
+  const panel = st.panel;
+  // админ жазған хабарламаны бірден өшіреміз (тек таратылатын хабарлама қалады: copyMessage үшін керек)
+  if (st.step !== 'bc_content') tgApi('deleteMessage', { chat_id: chat, message_id: msg.message_id }).catch(() => {});
+  const err = async t => { await say(chat, t, BACK, panel); return true; };
 
   if (st.step === 'bc_content') {
     st.step = 'bc_confirm'; st.chat = chat; st.mid = msg.message_id;
     let n = 0;
     for (const p of profiles.values()) if (realId(p.id) && !p.blocked) n++;
     await say(chat, '👆 Хабарлама осылай көрінеді.');
-    await tgApi('copyMessage', { chat_id: chat, from_chat_id: chat, message_id: msg.message_id });
+    const pr = await tgApi('copyMessage', { chat_id: chat, from_chat_id: chat, message_id: msg.message_id });
+    if (pr && pr.ok && pr.result) track(chat, pr.result.message_id);
     await say(chat, `Барлығы <b>${n}</b> пайдаланушыға жіберілсін бе?`, {
       inline_keyboard: [[{ text: '✅ Жіберу', callback_data: 'a:bc_go' }, { text: '❌ Бас тарту', callback_data: 'a:menu' }]]
     });
@@ -1144,54 +1178,50 @@ async function adminMsg(msg) {
   }
   if (st.step === 'adm_add' || st.step === 'adm_del') {
     if (!isMain(from)) { adminState.delete(from); return true; }
-    if (!/^\d{4,15}$/.test(text)) { await say(chat, '❗ ID тек сан болуы керек. Қайта жіберіңіз:', BACK); return true; }
-    if (isMain(text)) { await say(chat, '⭐ Бұл — бас админ, өзгертуге болмайды.', BACK); return true; }
+    if (!/^\d{4,15}$/.test(text)) return err('❗ ID тек сан болуы керек. Қайта жіберіңіз:');
+    if (isMain(text)) return err('⭐ Бұл — бас админ, өзгертуге болмайды.');
+    let note;
     if (st.step === 'adm_add') {
       if (!adminIds.includes(text)) adminIds.push(text);
       saveCfg();
       tgApi('sendMessage', { chat_id: text, text: '👮 Сізге админ құқығы берілді. Панельді ашу: /admin' }).catch(() => {});
-      await say(chat, `✅ <code>${text}</code> админ болып қосылды.`);
+      note = `✅ <code>${text}</code> админ болып қосылды.`;
     } else {
-      if (!adminIds.includes(text)) { await say(chat, '❗ Мұндай админ жоқ. Басқа ID жіберіңіз:', BACK); return true; }
+      if (!adminIds.includes(text)) return err('❗ Мұндай админ жоқ. Басқа ID жіберіңіз:');
       adminIds = adminIds.filter(i => i !== text);
       saveCfg();
       tgApi('sendMessage', { chat_id: text, text: 'ℹ️ Админ құқығыңыз алынды.' }).catch(() => {});
-      await say(chat, `✅ <code>${text}</code> админдерден өшірілді.`);
+      note = `✅ <code>${text}</code> админдерден өшірілді.`;
     }
     adminState.delete(from);
-    return adminsScreen(chat).then(() => true);
+    await adminsScreen(chat, panel, note);
+    return true;
   }
 
   // қалған қадамдар: пайдаланушыны ID / @username арқылы іздейді
   if (st.step === 'block' || st.step === 'unblock' || st.step === 'vip_user') {
     const p = findUser(text);
-    if (!p) { await say(chat, '❗ Пайдаланушы табылмады (ол ботқа кемінде бір рет кірген болуы керек). ID немесе @username қайта жіберіңіз:', BACK); return true; }
+    if (!p) return err('❗ Пайдаланушы табылмады (ол ботқа кемінде бір рет кірген болуы керек). ID немесе @username қайта жіберіңіз:');
     if (st.step === 'block') {
-      if (isAdmin(p.id)) { await say(chat, '❗ Админді блоктауға болмайды.', BACK); return true; }
+      if (isAdmin(p.id)) return err('❗ Админді блоктауға болмайды.');
       blockUser(p);
-      adminState.delete(from);
-      await say(chat, `🚫 ${label(p)} блокталды.`);
-      await showMenu(chat, from);
+      await showMenu(chat, from, panel, `🚫 ${label(p)} блокталды.`);
     } else if (st.step === 'unblock') {
       unblockUser(p);
-      adminState.delete(from);
-      await say(chat, `✅ ${label(p)} блоктан шығарылды.`);
-      await showMenu(chat, from);
+      await showMenu(chat, from, panel, `✅ ${label(p)} блоктан шығарылды.`);
     } else {
-      adminState.set(from, { step: 'vip_days', uid: p.id });
-      await say(chat, `👑 ${label(p)}\n\nНеше күнге VIP берілсін? (санды жазыңыз, мысалы: 7)`, BACK);
+      adminState.set(from, { step: 'vip_days', uid: p.id, panel });
+      await say(chat, `👑 ${label(p)}\n\nНеше күнге VIP берілсін? (санды жазыңыз, мысалы: 7)`, BACK, panel);
     }
     return true;
   }
   if (st.step === 'vip_days') {
     const n = Number(text);
     const p = profiles.get(st.uid);
-    if (!Number.isInteger(n) || n < 1 || n > 3650) { await say(chat, '❗ 1-ден 3650-ге дейінгі бүтін сан жазыңыз:', BACK); return true; }
+    if (!Number.isInteger(n) || n < 1 || n > 3650) return err('❗ 1-ден 3650-ге дейінгі бүтін сан жазыңыз:');
     if (!p) { adminState.delete(from); return true; }
     giveVip(p, n);
-    adminState.delete(from);
-    await say(chat, `✅ ${label(p)} пайдаланушысына <b>${n}</b> күнге VIP берілді.`);
-    await showMenu(chat, from);
+    await showMenu(chat, from, panel, `✅ ${label(p)} пайдаланушысына <b>${n}</b> күнге VIP берілді.`);
     return true;
   }
   return false;
@@ -1217,7 +1247,7 @@ async function runBroadcast(adminChat, fromChat, mid) {
       await sleep(50);   // секундына ~20 хабарлама (Telegram шегінен төмен)
     }
   } finally { broadcasting = false; }
-  await say(adminChat, `✅ Хабарлама жіберілді.\n\n📬 Жеткізілді: <b>${ok}</b>\n⚠️ Жеткізілмеді: <b>${fail}</b> (ботты бұғаттағандар т.б.)`, adminMenu(adminChat));
+  await showMenu(adminChat, adminChat, null, `✅ Хабарлама жіберілді.\n\n📬 Жеткізілді: <b>${ok}</b>\n⚠️ Жеткізілмеді: <b>${fail}</b> (ботты бұғаттағандар т.б.)`);
 }
 
 const server = http.createServer(async (req, res) => {
