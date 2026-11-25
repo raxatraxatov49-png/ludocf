@@ -844,17 +844,38 @@ setInterval(safe(() => {
 /* ================= Telegram бот ================= */
 
 const TXT = {
-  kk: { start: '🎲 <b>Ludo ойынына қош келдің!</b>\n\n🔥 Достарыңмен ойна, қарсыластарыңды жең және нағыз Ludo чемпионы атан!\n\n👇 Ойынды бастау үшін төмендегі батырманы бас!', play: '🎮 ОЙНАУ', cmd: 'Ойынды ашу', helpCmd: 'Көмек', rulesCmd: 'Ойын ережелері',
-    help: '🎲 <b>Лудо</b>\n/start — ойынды ашу\n/rules — ережелер\n/help — көмек',
+  kk: { start: '🎲 <b>Ludo ойынына қош келдің!</b>\n\n🔥 Достарыңмен ойна, қарсыластарыңды жең және нағыз Ludo чемпионы атан!\n\n👇 Ойынды бастау үшін төмендегі батырманы бас!', play: '🎮 ОЙНАУ', cmd: 'Ойынды ашу', helpCmd: 'Көмек', rulesCmd: 'Ойын ережелері', langCmd: 'Тілді өзгерту', langPrompt: '🌐 Тілді таңдаңыз:', langSet: '✅ Тіл: Қазақша',
+    help: '🎲 <b>Лудо</b>\n/start — ойынды ашу\n/rules — ережелер\n/help — көмек\n/language — тіл',
     rules: '📖 <b>Ережелер</b>\n• 6 шықса фишка үйден шығады\n• 6 / жеп алу / финишке жету — қосымша лақтыру\n• Қатарынан 3 алты — кезек өтеді\n• ☆ және бастапқы ұяшықтарда фишканы жеуге болмайды\n• Финишке дәл сан керек\n• 4 фишкасын бірінші жеткізген жеңеді\n• Бір әрекетке 25 секунд, 3 рет өткізсе ойыннан шығарылады' },
-  uz: { start: '🎲 <b>Ludo</b>\nDo‘stlaring yoki tasodifiy o‘yinchilar bilan o‘yna!', play: '🎮 O‘ynash', cmd: 'O‘yinni ochish', helpCmd: 'Yordam', rulesCmd: 'O‘yin qoidalari',
-    help: '🎲 <b>Ludo</b>\n/start — o‘yinni ochish\n/rules — qoidalar\n/help — yordam',
+  uz: { start: '🎲 <b>Ludo o‘yiniga xush kelibsiz!</b>\n\n🔥 Do‘stlaring bilan o‘yna, raqiblaringni yeng va haqiqiy Ludo chempioni bo‘l!\n\n👇 O‘yinni boshlash uchun quyidagi tugmani bos!', play: '🎮 O‘ynash', cmd: 'O‘yinni ochish', helpCmd: 'Yordam', rulesCmd: 'O‘yin qoidalari', langCmd: 'Tilni o‘zgartirish', langPrompt: '🌐 Tilni tanlang:', langSet: '✅ Til: O‘zbekcha',
+    help: '🎲 <b>Ludo</b>\n/start — o‘yinni ochish\n/rules — qoidalar\n/help — yordam\n/language — til',
     rules: '📖 <b>Qoidalar</b>\n• 6 tushsa, tosh uydan chiqadi\n• 6 / urib olish / marraga yetish — qo‘shimcha tashlash\n• Ketma-ket 3 ta oltilik — navbat o‘tadi\n• ☆ va boshlang‘ich kataklarda toshni urib bo‘lmaydi\n• Marraga aniq son kerak\n• 4 toshini birinchi yetkazgan g‘olib\n• Har yurishga 25 soniya, 3 marta o‘tkazsa o‘yindan chiqariladi' },
-  ru: { start: '🎲 <b>Лудо</b>\nИграй с друзьями или случайными игроками!', play: '🎮 Играть', cmd: 'Открыть игру', helpCmd: 'Помощь', rulesCmd: 'Правила игры',
-    help: '🎲 <b>Лудо</b>\n/start — открыть игру\n/rules — правила\n/help — помощь',
+  ru: { start: '🎲 <b>Добро пожаловать в Ludo!</b>\n\n🔥 Играй с друзьями, побеждай соперников и стань настоящим чемпионом Ludo!\n\n👇 Нажми кнопку ниже, чтобы начать игру!', play: '🎮 Играть', cmd: 'Открыть игру', helpCmd: 'Помощь', rulesCmd: 'Правила игры', langCmd: 'Сменить язык', langPrompt: '🌐 Выберите язык:', langSet: '✅ Язык: Русский',
+    help: '🎲 <b>Лудо</b>\n/start — открыть игру\n/rules — правила\n/help — помощь\n/language — язык',
     rules: '📖 <b>Правила</b>\n• Фишка выходит из дома при выпадении 6\n• 6 / съедение / финиш — дополнительный бросок\n• Три шестёрки подряд — ход переходит\n• На звёздах и стартовых клетках фишку съесть нельзя\n• В финиш нужно точное число\n• Побеждает тот, кто первым приведёт 4 фишки\n• 25 секунд на ход, 3 пропуска — выбываешь из игры' }
 };
 const pickLang = c => { c = String(c || '').slice(0, 2).toLowerCase(); return TXT[c] ? c : 'kk'; };
+
+// Боттың жеке чаттағы тілі (/language арқылы таңдалады). Мини аппқа әсер етпейді: ол өз тілін өзі таңдайды.
+const botLangOf = from => {
+  const p = from && profiles.get(String(from.id));
+  return p && TXT[p.botLang] ? p.botLang : pickLang(from && from.language_code);
+};
+const LANGS = [['kk', '🇰🇿 Қазақша'], ['ru', '🇷🇺 Русский'], ['uz', '🇺🇿 O‘zbekcha']];
+const langKb = () => ({ inline_keyboard: LANGS.map(([c, n]) => [{ text: n, callback_data: 'l:' + c }]) });
+const botCmds = c => [{ command: 'start', description: TXT[c].cmd }, { command: 'language', description: TXT[c].langCmd }, { command: 'rules', description: TXT[c].rulesCmd }, { command: 'help', description: TXT[c].helpCmd }];
+
+async function langCb(cb) {
+  const code = String(cb.data || '').slice(2);
+  tgApi('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => {});
+  const chat = cb.message && cb.message.chat && cb.message.chat.id;
+  if (!TXT[code] || !chat || !cb.from) return;
+  const p = touchBotUser(cb.from);
+  if (!p || (p.blocked && !isAdmin(p.id))) return;
+  if (p.botLang !== code) { p.botLang = code; saveProfile(p); }
+  tgApi('editMessageText', { chat_id: chat, message_id: cb.message.message_id, text: TXT[code].langSet, reply_markup: langKb() }).catch(() => {});
+  tgApi('setMyCommands', { commands: botCmds(code), scope: { type: 'chat', chat_id: chat } }).catch(() => {});   // команда мәзірі де таңдалған тілде болсын
+}
 
 async function tgApi(method, data) {
   const r = await fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/' + method, {
@@ -877,7 +898,7 @@ async function handleUpdate(update) {
     await tgApi('answerPreCheckoutQuery', ok ? { pre_checkout_query_id: pq.id, ok: true } : { pre_checkout_query_id: pq.id, ok: false, error_message: 'Order is not available' });
     return;
   }
-  if (update && update.callback_query) return adminCb(update.callback_query);
+  if (update && update.callback_query) return String(update.callback_query.data || '').startsWith('l:') ? langCb(update.callback_query) : adminCb(update.callback_query);
   const msg = update && update.message;
   const sp = msg && msg.successful_payment;
   if (sp) {
@@ -898,9 +919,14 @@ async function handleUpdate(update) {
   }
   if (!msg || typeof msg.text !== 'string') return;
   const cmd = (msg.text.match(/^\/(\w+)/) || [])[1];
-  const lang = pickLang(msg.from && msg.from.language_code);
+  const tgLang = pickLang(msg.from && msg.from.language_code);   // мини аппқа берілетін тіл (Telegram тілі)
+  const lang = botLangOf(msg.from);                              // боттың жеке чаттағы тілі
   if (cmd === 'help' || cmd === 'rules') {
     await tgApi('sendMessage', { chat_id: msg.chat.id, text: TXT[lang][cmd], parse_mode: 'HTML' });
+    return;
+  }
+  if (cmd === 'language') {
+    await tgApi('sendMessage', { chat_id: msg.chat.id, text: TXT[lang].langPrompt, reply_markup: langKb() });
     return;
   }
   if (cmd !== 'start') return;
@@ -908,7 +934,7 @@ async function handleUpdate(update) {
   const room = /^room_[A-Za-z0-9]{4,8}$/.test(param) ? param.slice(5) : '';
   const ref = /^ref_\d{1,15}$/.test(param) ? param.slice(4) : '';
   if (ref && msg.from) creditRef(msg.from.id, ref, [msg.from.first_name, msg.from.last_name].filter(Boolean).join(' ') || msg.from.username, null);
-  const url = MINI_APP_URL + '/?lang=' + lang + (room ? '&room=' + room : '') + (ref ? '&ref=' + ref : '');
+  const url = MINI_APP_URL + '/?lang=' + tgLang + (room ? '&room=' + room : '') + (ref ? '&ref=' + ref : '');
   await tgApi('sendMessage', {
     chat_id: msg.chat.id, text: TXT[lang].start, parse_mode: 'HTML',
     reply_markup: { inline_keyboard: [[{ text: TXT[lang].play, web_app: { url } }]] }
@@ -918,7 +944,7 @@ async function handleUpdate(update) {
 async function setupTelegram() {
   if (!BOT_TOKEN || DEV || process.env.SKIP_WEBHOOK === '1') return;
   try {
-    const cmds = c => [{ command: 'start', description: TXT[c].cmd }, { command: 'rules', description: TXT[c].rulesCmd }, { command: 'help', description: TXT[c].helpCmd }];
+    const cmds = botCmds;
     await tgApi('setMyCommands', { commands: cmds('kk') });
     for (const code of ['uz', 'ru']) {
       await tgApi('setMyCommands', { commands: cmds(code), language_code: code });
