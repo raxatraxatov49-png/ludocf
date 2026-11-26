@@ -433,3 +433,10 @@ html, body { background: #000; }
 }
 @keyframes sheetup   { from { transform: translateY(100%); } }
 @keyframes sheetfade { from { opacity: 0; } }
+
+/* === Кубик тек гезегі келген ойыншының қасында көрінеді === */
+.pcard .die { display: none; }
+.pcard.act .die,
+.pcard.rollz .die,
+.pcard:has(.die.land) .die { display: grid; }
+.pcard.gone .die { display: none !important; }
