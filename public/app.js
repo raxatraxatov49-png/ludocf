@@ -86,7 +86,7 @@ const EXTRA3 = {
     vipProg: '{n} / {m} дос шақырылды', vipInvite: 'Достарды шақыру', vipHow: 'Дос сілтеме арқылы ботқа бірінші рет кіргенде ғана есептеледі', vipUnlocked: '👑 VIP ашылды!', refText: 'Менімен Лудо ойнайық! 🎲',
     vipPerksT: 'VIP мүмкіндіктері',
     vp1: 'Басқалардың ойынын көру', vp1d: 'Ойыншылар тізімінен кез келген ойынды қарап отыра аласыз', vp2: 'Көрермен чаты', vp2d: 'Ойынды көргенде чатты көресіз және жаза аласыз; атыңыздың жанында VIP және «көрермен» белгісі тұрады',
-    vp3: 'Барлық тас түрлері ашық', vp3d: 'Дүкендегі барлық скиндер тегін киюге болады', vp4: 'Алтын VIP профиль', vp4d: 'Ойында және рейтингте атыңыз алтын түсті болып, 👑 белгісі көрінеді',
+    vp3: 'Барлық тас түрлері ашық', vp3d: 'Дүкендегі барлық скиндер тегін киюге болады', vp4: 'Алтын VIP профиль', vp4d: 'Ойында және рейтингте атыңыз алтын түсті болып, сары түсті VIP белгісі көрінеді',
     shopTitle: 'Дүкен', shopNote: 'Төлем — Telegram Stars (⭐) арқылы. Киген тасыңызды ойында басқалар да көреді.', shopSkins: 'Тас скиндері', equipped: 'Қойылған', equip: 'Кию', stkInter: 'интерактив стикер',
     sk_classic: 'Классик', sk_classic_d: 'Әдеттегі тастар', sk_obsidian: 'Обсидиан', sk_obsidian_d: 'Қара тас · түтін және жарқыл', sk_gold: 'Алтын', sk_gold_d: 'Алтын тастар · шашылған тиындар',
     sk_crystal: 'Кристалл', sk_crystal_d: 'Кристалл тастар · реңді ұшқындар', sk_fire: 'Жалын', sk_fire_d: 'Отты тастар · лава мен ұшқын', sk_ice: 'Мұз', sk_ice_d: 'Мұзды тастар · қар мен аяз', sk_neon: 'Неон', sk_neon_d: 'Жарқыраған ғарыш тастары',
@@ -101,7 +101,7 @@ const EXTRA3 = {
     vipProg: '{n} / {m} do‘st taklif qilindi', vipInvite: 'Do‘stlarni taklif qilish', vipHow: 'Do‘st havola orqali botga birinchi marta kirgandagina hisoblanadi', vipUnlocked: '👑 VIP ochildi!', refText: 'Men bilan Ludo o‘ynaymiz! 🎲',
     vipPerksT: 'VIP imkoniyatlari',
     vp1: 'Boshqalarning o‘yinini ko‘rish', vp1d: 'O‘yinchilar ro‘yxatidan istalgan o‘yinni tomosha qilasiz', vp2: 'Tomoshabin chati', vp2d: 'O‘yinni ko‘rganda chatni ko‘rasiz va yoza olasiz; ismingiz yonida VIP va «tomoshabin» belgisi turadi',
-    vp3: 'Barcha tosh turlari ochiq', vp3d: 'Do‘kondagi barcha skinlarni bepul kiyasiz', vp4: 'Oltin VIP profil', vp4d: 'O‘yinda va reytingda ismingiz oltin rangda, 👑 belgisi bilan ko‘rinadi',
+    vp3: 'Barcha tosh turlari ochiq', vp3d: 'Do‘kondagi barcha skinlarni bepul kiyasiz', vp4: 'Oltin VIP profil', vp4d: 'O‘yinda va reytingda ismingiz oltin rangda, sariq VIP belgisi bilan ko‘rinadi',
     shopTitle: 'Do‘kon', shopNote: 'To‘lov — Telegram Stars (⭐) orqali. Kiygan toshingizni o‘yinda boshqalar ham ko‘radi.', shopSkins: 'Tosh skinlari', equipped: 'Kiyilgan', equip: 'Kiyish', stkInter: 'interaktiv stiker',
     sk_classic: 'Klassik', sk_classic_d: 'Oddiy toshlar', sk_obsidian: 'Obsidian', sk_obsidian_d: 'Qora tosh · tutun va yarqiroq', sk_gold: 'Oltin', sk_gold_d: 'Oltin toshlar · sochilgan tangalar',
     sk_crystal: 'Kristal', sk_crystal_d: 'Kristal toshlar · rangli uchqunlar', sk_fire: 'Olov', sk_fire_d: 'Olovli toshlar · lava va uchqun', sk_ice: 'Muz', sk_ice_d: 'Muzli toshlar · qor va ayoz', sk_neon: 'Neon', sk_neon_d: 'Yarqiroq kosmik toshlar',
@@ -116,7 +116,7 @@ const EXTRA3 = {
     vipProg: 'Приглашено {n} / {m}', vipInvite: 'Пригласить друзей', vipHow: 'Засчитывается, только если друг впервые зашёл в бота по вашей ссылке', vipUnlocked: '👑 VIP открыт!', refText: 'Сыграем в Лудо! 🎲',
     vipPerksT: 'Возможности VIP',
     vp1: 'Смотреть чужие игры', vp1d: 'Наблюдайте за любой игрой из списка игроков', vp2: 'Чат зрителей', vp2d: 'При просмотре игры вы видите чат и можете писать; рядом с именем — значок VIP и «зритель»',
-    vp3: 'Все виды фишек открыты', vp3d: 'Все скины из магазина можно надеть бесплатно', vp4: 'Золотой VIP-профиль', vp4d: 'В игре и рейтинге имя золотое, рядом значок 👑',
+    vp3: 'Все виды фишек открыты', vp3d: 'Все скины из магазина можно надеть бесплатно', vp4: 'Золотой VIP-профиль', vp4d: 'В игре и рейтинге имя золотое, рядом жёлтый значок VIP',
     shopTitle: 'Магазин', shopNote: 'Оплата — Telegram Stars (⭐). Выбранные фишки видят остальные игроки.', shopSkins: 'Скины фишек', equipped: 'Надето', equip: 'Надеть', stkInter: 'интерактивных стикера',
     sk_classic: 'Классика', sk_classic_d: 'Обычные фишки', sk_obsidian: 'Обсидиан', sk_obsidian_d: 'Чёрные фишки · дым и молнии', sk_gold: 'Золото', sk_gold_d: 'Золотые фишки · рассыпанные монеты',
     sk_crystal: 'Кристалл', sk_crystal_d: 'Кристальные фишки · цветные искры', sk_fire: 'Огонь', sk_fire_d: 'Огненные фишки · лава и искры', sk_ice: 'Лёд', sk_ice_d: 'Ледяные фишки · снег и мороз', sk_neon: 'Неон', sk_neon_d: 'Светящиеся космические фишки',
@@ -127,29 +127,29 @@ const EXTRA3 = {
 };
 Object.keys(EXTRA3).forEach(l => Object.assign(I18N[l], EXTRA3[l]));
 const EXTRA4 = {
-  kk: { vipLocked: 'Ludo VIP', vipLockedP: '7 досыңды шақыр — 7 күнге VIP ал', vipActive: 'VIP белсенді', vipActiveP: 'Барлық мүмкіндіктер ашық. Профиліңізде 👑 белгісі көрінеді.',
+  kk: { vipLocked: 'Ludo VIP', vipLockedP: '7 досыңды шақыр — 7 күнге VIP ал', vipActive: 'VIP белсенді', vipActiveP: 'Барлық мүмкіндіктер ашық. Профиліңізде сары түсті VIP белгісі көрінеді.',
     vipProg: 'Шақырылды: {n} / {m}', vipLeft: 'Қалды: {t}', vipFmtD: '{d} күн {h} сағ', vipFmtH: '{h} сағ {m} мин',
     vipInvite: 'Достарды шақыру',
     vipHow: '7 дос шақырсаң — 7 күнге VIP аласың. Бұрын қосылған достар есептелмейді, санақ 0-ден басталады. 7 күн біткен соң қайтадан 7 дос шақырып, тағы 7 күн ала аласың. Дос сілтемемен ботқа бірінші рет кіріп, «Бастау» басқанда ғана есептеледі.',
     vp1: 'Ойынды қарағанда чатқа жазу', vp1d: 'Басқалардың ойынын қарап отырып чатты көресіз және жаза аласыз. VIP-сіз көрермендер чатты аша алмайды.',
     vp2: 'Барлық тас түрлері', vp2d: 'Дүкендегі барлық тастар VIP мерзімі бойы ашық.',
-    vp3: 'Профильде VIP белгісі', vp3d: 'Ойында және профильде атыңыздың жанында 👑 белгісі тұрады.',
+    vp3: 'Профильде VIP белгісі', vp3d: 'Ойында және профильде атыңыздың жанында сары түсті VIP белгісі тұрады.',
     vp4: 'Таңдауыңыз қарсыласқа көрінеді', vp4d: 'Ойында сіз таңдаған тас қарсыластарыңызға көрінеді.' },
-  uz: { vipLocked: 'Ludo VIP', vipLockedP: '7 do‘stingni taklif qil — 7 kunga VIP ol', vipActive: 'VIP faol', vipActiveP: 'Barcha imkoniyatlar ochiq. Profilingizda 👑 belgisi ko‘rinadi.',
+  uz: { vipLocked: 'Ludo VIP', vipLockedP: '7 do‘stingni taklif qil — 7 kunga VIP ol', vipActive: 'VIP faol', vipActiveP: 'Barcha imkoniyatlar ochiq. Profilingizda sariq VIP belgisi ko‘rinadi.',
     vipProg: 'Taklif qilindi: {n} / {m}', vipLeft: 'Qoldi: {t}', vipFmtD: '{d} kun {h} soat', vipFmtH: '{h} soat {m} daq',
     vipInvite: 'Do‘stlarni taklif qilish',
     vipHow: '7 do‘st taklif qilsang — 7 kunga VIP olasan. Avval qo‘shilgan do‘stlar hisobga olinmaydi, hisob 0 dan boshlanadi. 7 kun tugagach, yana 7 do‘st taklif qilib, yana 7 kun olishing mumkin. Do‘st havola orqali botga birinchi marta kirib, «Start» bossagina hisoblanadi.',
     vp1: 'O‘yin ko‘rganda chatga yozish', vp1d: 'Boshqalarning o‘yinini ko‘rib turib chatni ko‘rasiz va yoza olasiz. VIP bo‘lmagan tomoshabinlar chatni ocha olmaydi.',
     vp2: 'Barcha tosh turlari', vp2d: 'Do‘kondagi barcha toshlar VIP muddati davomida ochiq.',
-    vp3: 'Profilda VIP belgisi', vp3d: 'O‘yinda va profilda ismingiz yonida 👑 belgisi turadi.',
+    vp3: 'Profilda VIP belgisi', vp3d: 'O‘yinda va profilda ismingiz yonida sariq VIP belgisi turadi.',
     vp4: 'Tanlovingiz raqibga ko‘rinadi', vp4d: 'O‘yinda siz tanlagan tosh raqiblaringizga ko‘rinadi.' },
-  ru: { vipLocked: 'Ludo VIP', vipLockedP: 'Пригласи 7 друзей — получи VIP на 7 дней', vipActive: 'VIP активен', vipActiveP: 'Все возможности открыты. В профиле виден значок 👑.',
+  ru: { vipLocked: 'Ludo VIP', vipLockedP: 'Пригласи 7 друзей — получи VIP на 7 дней', vipActive: 'VIP активен', vipActiveP: 'Все возможности открыты. В профиле виден жёлтый значок VIP.',
     vipProg: 'Приглашено: {n} / {m}', vipLeft: 'Осталось: {t}', vipFmtD: '{d} д {h} ч', vipFmtH: '{h} ч {m} мин',
     vipInvite: 'Пригласить друзей',
     vipHow: 'Пригласи 7 друзей и получи VIP на 7 дней. Ранее добавленные друзья не учитываются, отсчёт начинается с 0. Когда 7 дней закончатся, можно снова пригласить 7 друзей и получить ещё 7 дней. Засчитывается, только если друг впервые зашёл в бота по твоей ссылке и нажал «Старт».',
     vp1: 'Писать в чат при просмотре игры', vp1d: 'Вы видите чат и пишете в него при просмотре игры. Зрители без VIP не могут открыть чат.',
     vp2: 'Все виды фишек', vp2d: 'Все фишки из магазина доступны на срок VIP.',
-    vp3: 'Значок VIP в профиле', vp3d: 'В игре и в профиле рядом с именем стоит значок 👑.',
+    vp3: 'Значок VIP в профиле', vp3d: 'В игре и в профиле рядом с именем стоит жёлтый значок VIP.',
     vp4: 'Ваш выбор виден сопернику', vp4d: 'Выбранные вами фишки видны соперникам в игре.' }
 };
 Object.keys(EXTRA4).forEach(l => Object.assign(I18N[l], EXTRA4[l]));
@@ -1064,7 +1064,7 @@ function renderVip() {
   $('vipCnt').textContent = info.vip
     ? t('vipLeft').replace('{t}', fmtLeft((info.endAt || 0) - Date.now()))
     : t('vipProg').replace('{n}', Math.min(info.refs, need)).replace('{m}', need);
-  const perks = [['💬', 'vp1'], ['🎲', 'vp2'], ['👑', 'vp3'], ['👁', 'vp4']];
+  const perks = [['💬', 'vp1'], ['🎲', 'vp2'], ['<span style="font-size:12px;font-weight:900;letter-spacing:.5px;padding:3px 8px;border-radius:999px;background:linear-gradient(180deg,#f9d878,#e8b04e);color:#2a1c00">VIP</span>', 'vp3'], ['👁', 'vp4']];
   $('vipPerks').innerHTML = perks.map(p => `<li><i>${p[0]}</i><div><b>${t(p[1])}</b><span>${t(p[1] + 'd')}</span></div></li>`).join('');
 }
 // VIP мерзімі біткенде экранды жаңартамыз
