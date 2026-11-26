@@ -420,7 +420,19 @@ function startGame(list, ranked) {
 function setTimer(g, ms, fn) {
   clearTimeout(g.timer);
   g.deadline = Date.now() + ms;
-  g.timer = setTimeout(safe(fn), ms);
+  g.timerFn = fn;
+  g.timer = setTimeout(safe(() => { g.timerFn = null; fn(); }), ms);
+}
+
+// Қорғаныс: егер setTimeout өшіп қалса (мысалы Durable Object қайта іске қосылса),
+// мерзімі өткен әрекетті қолмен орындаймыз. Хабарлама келгенде және 20 сек сайын тексеріледі.
+function checkOverdue(g) {
+  if (!g || g.winner !== null || !g.timerFn || !g.deadline) return;
+  if (Date.now() < g.deadline + 1500) return;
+  const fn = g.timerFn;
+  g.timerFn = null;
+  clearTimeout(g.timer);
+  safe(fn)();
 }
 
 function beginTurn(g) {
@@ -875,7 +887,11 @@ wss.on('connection', ws => {
     if (now - (ws.rateAt || 0) >= 1000) { ws.rateAt = now; ws.rateN = 0; }
     if (++ws.rateN > 30) return;
     if (m.t === 'auth') return onAuth(ws, m);
-    if (ws.user) handle(ws.user, m);
+    if (ws.user) {
+      const gg = games.get(ws.user.game) || games.get(ws.user.watch);
+      if (gg) checkOverdue(gg);
+      handle(ws.user, m);
+    }
   }));
   ws.on('close', safe(() => onClose(ws)));
 });
@@ -888,6 +904,7 @@ setInterval(safe(() => {
     rooms.delete(r.code);
   }
   for (const g of games.values()) {
+    checkOverdue(g);
     const online = g.seats.filter(s => !s.left && isOnline(users.get(s.uid))).length;
     if (online) g.emptySince = 0;
     else if (!g.emptySince) g.emptySince = now;
