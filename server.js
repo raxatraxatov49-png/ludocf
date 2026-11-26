@@ -957,6 +957,8 @@ const GROUP_BTN = { kk: '👥 Группада ойнау', ru: '👥 Играт
 
 async function handleUpdate(update) {
   if (update && update.my_chat_member) return onBotAdded(update.my_chat_member);
+  const gch = update && ((update.message && update.message.chat) || (update.callback_query && update.callback_query.message && update.callback_query.message.chat));
+  if (gch && gch.type !== 'private') { const gr = touchGroup(gch, true); if (gr && gr.blocked) return; }   // блокталған топта бот жауап бермейді
   const pq = update && update.pre_checkout_query;
   if (pq) {   // Stars төлемін растау: тек біздің тапсырыс, дұрыс сома, ойыншыда әлі жоқ скин
     const id = parsePay(pq.invoice_payload, pq.from && pq.from.id);
@@ -1059,6 +1061,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 function saveCfg() {
   dbPut('cfg:admins', adminIds);
   dbPut('cfg:stats', stats);
+  dbPut('cfg:perms', adminPerms);
 }
 async function loadCfg() {
   try {
@@ -1067,6 +1070,11 @@ async function loadCfg() {
     if (Array.isArray(a)) adminIds = a.map(String);
     const s = m.get('cfg:stats');
     if (s && Number.isFinite(s.games)) stats.games = s.games;
+    if (s && Number.isFinite(s.groupGames)) stats.groupGames = s.groupGames;
+    const pm = m.get('cfg:perms');
+    if (pm && typeof pm === 'object') adminPerms = pm;
+    const grm = await dbList('gr:');
+    for (const [, v] of grm) if (v && v.id) groups.set(String(v.id), v);
     const gm = await dbList('g:');
     for (const [k, v] of gm) if (v && GT[v.lang]) groupLang.set(k.slice(2), v.lang);
     const rm = await dbList('r:');
@@ -1153,26 +1161,71 @@ async function statsText() {
   for (const u of users.values()) if (isOnline(u) && realId(u.id)) online++;
   let live = 0;
   for (const g of games.values()) if (g.winner === null) live++;
-  return '📊 <b>Статистика</b>\n\n'
-    + `👥 Барлық пайдаланушылар: <b>${total}</b>\n`
+  const ag = activeGroups(), open = ag.filter(g => g.username).length;
+  const bg = [...groups.values()].filter(g => g.blocked).length;
+  return '📊 <b>БОТ СТАТИСТИКАСЫ</b>\n\n'
+    + `👥 Қосылған топтар: <b>${ag.length}</b>\n`
+    + `🌐 Ашық топтар: <b>${open}</b>\n`
+    + `🔒 Жабық топтар: <b>${ag.length - open}</b>\n`
+    + `🚫 Блокталған топтар: <b>${bg}</b>\n\n`
+    + `🎮 Барлық ойындар: <b>${stats.games}</b>\n`
+    + `👥 Топтағы ойындар: <b>${stats.groupGames || 0}</b>\n`
+    + `⚔️ Белсенді ойындар: <b>${live}</b>\n\n`
+    + `👤 Барлық ойыншылар: <b>${total}</b>\n`
     + `🆕 Бүгін қосылғандар: <b>${today}</b>\n`
     + `🟢 Қазір онлайн: <b>${online}</b>\n`
     + `👑 VIP: <b>${vip}</b>\n`
-    + `🚫 Блокталғандар: <b>${blocked}</b>\n\n`
-    + `🎮 Қазір жүріп жатқан ойындар: <b>${live}</b>\n`
-    + `🏁 Барлығы ойналған ойындар: <b>${stats.games}</b>\n\n`
+    + `🚫 Блокталған ойыншылар: <b>${blocked}</b>\n\n`
     + await storageLine();
 }
 
-const BACK = { inline_keyboard: [[{ text: '⬅️ Артқа', callback_data: 'a:menu' }]] };
-const adminMenu = id => ({
-  inline_keyboard: [
-    [{ text: '📊 Статистика', callback_data: 'a:stats' }],
-    [{ text: '🚫 Блоктау', callback_data: 'a:block' }, { text: '✅ Блоктан шығару', callback_data: 'a:unblock' }],
-    [{ text: '👑 VIP беру', callback_data: 'a:vip' }],
-    [{ text: '📢 Хабарлама жіберу', callback_data: 'a:bc' }]
-  ].concat(isMain(id) ? [[{ text: '👮 Админдерді басқару', callback_data: 'a:admins' }]] : [])
-});
+/* ---- Топтар тізімі (бот қосылған топтар) ---- */
+const groups = new Map();   // chatId -> { id, title, username, type, added, active, blocked, games }
+function saveGroup(g) { dbPut('gr:' + g.id, g); }
+function touchGroup(chat, active) {
+  if (!chat || (chat.type !== 'group' && chat.type !== 'supergroup')) return null;
+  const id = String(chat.id);
+  let g = groups.get(id), ch = false;
+  if (!g) { g = { id, title: '', username: '', type: chat.type, added: Date.now(), active: true, blocked: false, games: 0 }; groups.set(id, g); ch = true; }
+  const title = String(chat.title || '').slice(0, 60), un = String(chat.username || '').toLowerCase();
+  if (title && title !== g.title) { g.title = title; ch = true; }
+  if (un !== (g.username || '')) { g.username = un; ch = true; }
+  if (chat.type !== g.type) { g.type = chat.type; ch = true; }
+  if (active != null && g.active !== active) { g.active = active; ch = true; }
+  if (ch) saveGroup(g);
+  return g;
+}
+
+/* ---- Админ құқықтары ---- */
+const PERMS = [
+  ['stats', '📊 Статистика'], ['groups', '👥 Қосылған топтар'], ['games', '🎮 Белсенді ойындар'],
+  ['bc_groups', '📣 Топтарға хабарлама'], ['bc_users', '📨 Пайдаланушыларға хабарлама'],
+  ['vip', '👑 VIP беру'], ['block', '⛔ Пайдаланушыны блоктау'],
+  ['grpmgmt', '🚫 Топтарды басқару'], ['admins', '👑 Админдерді басқару']
+];
+const DEFAULT_PERMS = PERMS.map(p => p[0]).filter(k => k !== 'admins');
+let adminPerms = {};                                   // adminId -> [рұқсат кілттері]
+const can = (id, k) => isMain(id) || (adminIds.includes(String(id)) && (adminPerms[String(id)] || DEFAULT_PERMS).includes(k));
+const fmtDate = ts => ts ? new Date(ts + 5 * 3600000).toISOString().slice(0, 10) : '—';
+
+const MAINBTN = [{ text: '🎴 Басты мәзір', callback_data: 'a:menu' }];
+const BACK = { inline_keyboard: [MAINBTN] };
+const PANEL = '🔐 <b>LUDO BOT ADMIN PANEL</b>\n\nБасқару бөлімін таңдаңыз:';
+const adminMenu = id => {
+  const rows = [];
+  const add = (perm, text, cb) => { if (can(id, perm)) rows.push([{ text, callback_data: cb }]); };
+  add('stats', '📊 Статистика', 'a:stats');
+  add('groups', '👥 Қосылған топтар', 'a:gl:0');
+  add('games', '🎮 Белсенді ойындар', 'a:games');
+  add('bc_groups', '📣 Топтарға хабарлама', 'a:bcg');
+  add('bc_users', '📨 Пайдаланушыларға хабарлама', 'a:bc');
+  add('vip', '👑 VIP беру', 'a:vip');
+  add('block', '⛔ Пайдаланушыны блоктау', 'a:ub');
+  add('grpmgmt', '🚫 Топтарды басқару', 'a:gm');
+  add('admins', '👑 Админдерді басқару', 'a:admins');
+  rows.push([{ text: '🔄 Жаңарту', callback_data: 'a:menu' }]);
+  return { inline_keyboard: rows };
+};
 // Админ чатындағы хабарламаларды есептеп тұрамыз (профильде сақталады), қажетсіз болғанда өшіреміз
 function track(chat, mid) {
   const p = profiles.get(String(chat));
@@ -1206,44 +1259,156 @@ const say = async (chat, text, kb, mid) => {
 const showMenu = async (chat, id, mid, notice) => {
   adminState.delete(String(id));
   await cleanChat(chat, mid);
-  return say(chat, (notice ? notice + '\n\n' : '') + '🛠 <b>Админ панель</b>\nБөлімді таңдаңыз:', adminMenu(id), mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + PANEL, adminMenu(id), mid);
 };
 
-async function adminsScreen(chat, mid, notice) {
-  const list = adminIds.length ? adminIds.map(i => { const p = profiles.get(i); return '• ' + (p ? label(p) : `<code>${i}</code>`); }).join('\n') : 'Қосымша админ жоқ';
+const PAGE_SIZE = 8;
+const activeGroups = () => [...groups.values()].filter(g => g.active !== false).sort((a, b) => (b.added || 0) - (a.added || 0));
+
+async function groupsScreen(chat, mid, page, notice) {
+  const all = activeGroups(), pages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+  page = Math.min(Math.max(0, page | 0), pages - 1);
+  const rows = all.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+    .map((g, i) => [{ text: `${page * PAGE_SIZE + i + 1}. ${g.blocked ? '🚫 ' : ''}${g.title || g.id}`.slice(0, 60), callback_data: 'a:g:' + g.id }]);
+  const nav = [];
+  if (page > 0) nav.push({ text: '⬅️ Алдыңғы', callback_data: 'a:gl:' + (page - 1) });
+  if (page < pages - 1) nav.push({ text: 'Келесі ➡️', callback_data: 'a:gl:' + (page + 1) });
+  if (nav.length) rows.push(nav);
+  rows.push(MAINBTN);
   await cleanChat(chat, mid);
-  return say(chat, (notice ? notice + '\n\n' : '') + `👮 <b>Админдер</b>\n\n⭐ Бас админ: <code>${MAIN_ADMIN}</code>\n\n${list}`, {
-    inline_keyboard: [[{ text: '➕ Админ қосу', callback_data: 'a:adm_add' }, { text: '➖ Админді өшіру', callback_data: 'a:adm_del' }], [{ text: '⬅️ Артқа', callback_data: 'a:menu' }]]
-  }, mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + `👥 <b>ҚОСЫЛҒАН ТОПТАР</b>\n\n📊 Жалпы топ: <b>${all.length}</b>\n📄 Бет: <b>${page + 1}/${pages}</b>` + (all.length ? '' : '\n\nӘзірге топ жоқ.'), { inline_keyboard: rows }, mid);
 }
+
+async function groupScreen(chat, mid, from, id, notice) {
+  const g = groups.get(String(id));
+  if (!g) return groupsScreen(chat, mid, 0, '❗ Топ табылмады.');
+  const rows = [];
+  if (can(from, 'grpmgmt')) rows.push([g.blocked ? { text: '✅ Блоктан шығару', callback_data: 'a:gu:' + g.id } : { text: '🚫 Топты блоктау', callback_data: 'a:gb:' + g.id }]);
+  rows.push([{ text: '⬅️ Топтар тізімі', callback_data: 'a:gl:0' }], MAINBTN);
+  await cleanChat(chat, mid);
+  return say(chat, (notice ? notice + '\n\n' : '')
+    + `👥 <b>${esc(g.title || g.id)}</b>\n\n🆔 <code>${g.id}</code>\n`
+    + (g.username ? `🌐 Ашық топ: @${esc(g.username)}\n` : '🔒 Жабық топ\n')
+    + `🎮 Топтағы ойындар: <b>${g.games || 0}</b>\n📅 Қосылған күні: <b>${fmtDate(g.added)}</b>\n`
+    + `🔖 Күйі: ${g.active === false ? '❌ Бот топтан шыққан' : g.blocked ? '🚫 Блокталған' : '✅ Белсенді'}`, { inline_keyboard: rows }, mid);
+}
+
+function setGroupBlocked(id, v) {
+  const g = groups.get(String(id));
+  if (!g) return null;
+  g.blocked = v; saveGroup(g);
+  if (v) { const l = lobbies.get(Number(g.id)); if (l) { clearTimeout(l.timer); lobbies.delete(Number(g.id)); } }
+  return g;
+}
+
+async function gamesScreen(chat, mid) {
+  const live = [...games.values()].filter(g => g.winner === null);
+  const lines = live.slice(0, 15).map((g, i) => `${i + 1}. ` + g.seats.map(s => `${COLOR_DOT[s.color] || '⚪'} ${esc(s.name)}${s.left ? ' ❌' : ''}`).join(' · ')
+    + (g.groupChat ? ` — 👥 ${esc((groups.get(String(g.groupChat)) || {}).title || 'топ')}` : ''));
+  await cleanChat(chat, mid);
+  return say(chat, `🎮 <b>БЕЛСЕНДІ ОЙЫНДАР</b>\n\n⚔️ Жүріп жатқан ойын: <b>${live.length}</b>\n\n` + (lines.join('\n') || 'Қазір ойын жоқ.'),
+    { inline_keyboard: [[{ text: '🔄 Жаңарту', callback_data: 'a:games' }], MAINBTN] }, mid);
+}
+
+async function usersBlockScreen(chat, mid, notice) {
+  const bl = [...profiles.values()].filter(p => realId(p.id) && p.blocked);
+  const rows = [[{ text: '➕ Блоктау', callback_data: 'a:block' }]]
+    .concat(bl.slice(0, 30).map(p => [{ text: `🔒 ${p.username ? '@' + p.username : (p.name || '—')} · ${p.id}`.slice(0, 60), callback_data: 'a:uu:' + p.id }]), [MAINBTN]);
+  await cleanChat(chat, mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + `⛔ <b>ПАЙДАЛАНУШЫНЫ БЛОКТАУ</b>\n\nБлокталғандар: <b>${bl.length}</b>\n\nБлокталған адам Mini App-ты аша алмайды және ботқа жаза алмайды. Блоктан шығару үшін тізімдегі адамды басыңыз.`, { inline_keyboard: rows }, mid);
+}
+
+async function groupsManageScreen(chat, mid, notice) {
+  const bl = [...groups.values()].filter(g => g.blocked);
+  const rows = [[{ text: '➕ Топты блоктау', callback_data: 'a:gadd' }]]
+    .concat(bl.slice(0, 30).map(g => [{ text: `🔒 ${g.title || g.id}`.slice(0, 60), callback_data: 'a:g:' + g.id }]), [[{ text: '👥 Барлық топтар', callback_data: 'a:gl:0' }], MAINBTN]);
+  await cleanChat(chat, mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + `🚫 <b>ТОПТАРДЫ БАСҚАРУ</b>\n\nБлокталған топтар: <b>${bl.length}</b>\n\nБлокталған топта бот жұмыс істемейді. Блоктан шығару үшін тізімдегі топты басыңыз.`, { inline_keyboard: rows }, mid);
+}
+
+async function adminsScreen(chat, mid, notice) {
+  const rows = [[{ text: '➕ Админ қосу', callback_data: 'a:adm_add' }]];
+  for (const i of adminIds) { const p = profiles.get(i); rows.push([{ text: ('👤 ' + (p ? (p.username ? '@' + p.username : p.name) + ' · ' : '') + i).slice(0, 60), callback_data: 'a:ap:' + i }]); }
+  rows.push(MAINBTN);
+  await cleanChat(chat, mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + `👑 <b>АДМИНДЕРДІ БАСҚАРУ</b>\n\n👑 Негізгі админ: <code>${MAIN_ADMIN}</code>\n👥 Қосымша админдер: <b>${adminIds.length}</b>\n\nАдмин қосу немесе тізімнен админді таңдаңыз:`, { inline_keyboard: rows }, mid);
+}
+
+async function adminPermScreen(chat, mid, id, notice) {
+  if (!adminIds.includes(id)) return adminsScreen(chat, mid, '❗ Мұндай админ жоқ.');
+  const perms = adminPerms[id] || DEFAULT_PERMS, p = profiles.get(id);
+  const granted = PERMS.filter(([k]) => perms.includes(k)).map(([, t]) => t).join('\n') || 'Рұқсат берілмеген';
+  const rows = PERMS.map(([k, t]) => [{ text: (perms.includes(k) ? '✅ ' : '❌ ') + t, callback_data: `a:pt:${id}:${k}` }]);
+  rows.push([{ text: '🗑 Админді өшіру', callback_data: 'a:ad:' + id }], [{ text: '⬅️ Админдер тізімі', callback_data: 'a:admins' }]);
+  await cleanChat(chat, mid);
+  return say(chat, (notice ? notice + '\n\n' : '') + `👤 <b>Админ:</b> ${p ? label(p) : `<code>${id}</code>`}\n\n<b>Берілген рұқсаттар:</b>\n${granted}\n\nРұқсаттарды өзгерту үшін төмендегі батырмаларды басыңыз.`, { inline_keyboard: rows }, mid);
+}
+
+// батырма → қажетті рұқсат
+const PERM_OF = { stats: 'stats', gl: 'groups', g: 'groups', games: 'games', bcg: 'bc_groups', bcg_go: 'bc_groups', bc: 'bc_users', bc_go: 'bc_users',
+  vip: 'vip', ub: 'block', block: 'block', unblock: 'block', uu: 'block', gm: 'grpmgmt', gb: 'grpmgmt', gu: 'grpmgmt', gadd: 'grpmgmt',
+  admins: 'admins', adm_add: 'admins', ap: 'admins', pt: 'admins', ad: 'admins' };
 
 async function adminCb(cb) {
   const from = String(cb.from && cb.from.id);
   const chat = cb.message && cb.message.chat && cb.message.chat.id;
-  tgApi('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => {});
-  if (!chat || !isAdmin(from)) return;
+  const answer = (text, alert) => tgApi('answerCallbackQuery', Object.assign({ callback_query_id: cb.id }, text ? { text, show_alert: Boolean(alert) } : {})).catch(() => {});
+  if (!chat || !isAdmin(from)) return answer();
   const d = String(cb.data || '');
+  const parts = d.split(':'), act = parts[1];
+  const perm = PERM_OF[act];
+  if (perm && !can(from, perm)) return answer('🚫 Рұқсат жоқ', true);
+  await answer('Дайын!');
   const mid = cb.message.message_id;
   track(chat, mid);
   const ask = (step, text) => { adminState.set(from, { step, panel: mid }); return say(chat, text, BACK, mid); };
-  switch (d) {
-    case 'a:menu': return showMenu(chat, from, mid);
-    case 'a:stats': adminState.delete(from); return say(chat, await statsText(), BACK, mid);
-    case 'a:block': return ask('block', '🚫 Блоктау\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
-    case 'a:unblock': return ask('unblock', '✅ Блоктан шығару\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
-    case 'a:vip': return ask('vip_user', '👑 VIP беру\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
-    case 'a:bc': return ask('bc_content', '📢 <b>Хабарлама жіберу</b>\n\nБарлық пайдаланушыларға жіберілетін хабарламаны жіберіңіз: мәтін, сілтеме немесе сурет (жазуымен).');
-    case 'a:bc_go': {
+  switch (act) {
+    case 'menu': return showMenu(chat, from, mid);
+    case 'stats': adminState.delete(from); return say(chat, await statsText(), adminMenu(from), mid);
+    case 'gl': adminState.delete(from); return groupsScreen(chat, mid, Number(parts[2]) || 0);
+    case 'g': return groupScreen(chat, mid, from, parts[2]);
+    case 'gb': { const g = setGroupBlocked(parts[2], true); return groupScreen(chat, mid, from, parts[2], g ? '🚫 Топ блокталды.' : '❗ Топ табылмады.'); }
+    case 'gu': { const g = setGroupBlocked(parts[2], false); return groupScreen(chat, mid, from, parts[2], g ? '✅ Топ блоктан шығарылды.' : '❗ Топ табылмады.'); }
+    case 'games': adminState.delete(from); return gamesScreen(chat, mid);
+    case 'bcg': return ask('bcg_content', '📣 <b>Топтарға хабарлама</b>\n\nБарлық топқа жіберілетін хабарламаны жіберіңіз: мәтін, сілтеме немесе сурет (жазуымен).');
+    case 'bc': return ask('bc_content', '📨 <b>Пайдаланушыларға хабарлама</b>\n\nБарлық пайдаланушыларға жіберілетін хабарламаны жіберіңіз: мәтін, сілтеме немесе сурет (жазуымен).');
+    case 'bc_go': case 'bcg_go': {
+      const toGroups = act === 'bcg_go';
       const st = adminState.get(from);
-      if (!st || st.step !== 'bc_confirm') return;
+      if (!st || st.step !== (toGroups ? 'bcg_confirm' : 'bc_confirm')) return;
       adminState.delete(from);
       if (broadcasting) return say(chat, '⏳ Басқа хабарлама жіберіліп жатыр, күте тұрыңыз.', BACK, mid);
-      runBroadcast(chat, st.chat, st.mid);
+      runBroadcast(chat, st.chat, st.mid, toGroups);
       return;
     }
-    case 'a:admins': if (!isMain(from)) return; adminState.delete(from); return adminsScreen(chat, mid);
-    case 'a:adm_add': if (!isMain(from)) return; return ask('adm_add', '➕ Жаңа админнің Telegram <b>ID</b> нөмірін жіберіңіз:');
-    case 'a:adm_del': if (!isMain(from)) return; return ask('adm_del', '➖ Өшірілетін админнің <b>ID</b> нөмірін жіберіңіз:');
+    case 'vip': return ask('vip_user', '👑 VIP беру\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
+    case 'ub': case 'unblock': adminState.delete(from); return usersBlockScreen(chat, mid);
+    case 'block': return ask('block', '⛔ Блоктау\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
+    case 'uu': {
+      const p = profiles.get(parts[2]);
+      if (p && p.blocked) { unblockUser(p); return usersBlockScreen(chat, mid, `✅ ${label(p)} блоктан шығарылды.`); }
+      return usersBlockScreen(chat, mid);
+    }
+    case 'gm': adminState.delete(from); return groupsManageScreen(chat, mid);
+    case 'gadd': return ask('gblock', '🚫 Топты блоктау\n\nТоптың <b>ID</b> нөмірін жіберіңіз (мысалы: <code>-1001234567890</code>). ID-ді «Қосылған топтар» тізімінен табуға болады.');
+    case 'admins': adminState.delete(from); return adminsScreen(chat, mid);
+    case 'adm_add': return ask('adm_add', '➕ Жаңа админнің Telegram <b>ID</b> нөмірін жіберіңіз:');
+    case 'ap': return adminPermScreen(chat, mid, parts[2]);
+    case 'pt': {
+      const id = parts[2], k = parts[3];
+      if (!adminIds.includes(id) || !PERMS.some(p => p[0] === k)) return;
+      const cur = new Set(adminPerms[id] || DEFAULT_PERMS);
+      if (cur.has(k)) cur.delete(k); else cur.add(k);
+      adminPerms[id] = [...cur]; saveCfg();
+      return adminPermScreen(chat, mid, id);
+    }
+    case 'ad': {
+      const id = parts[2];
+      if (!adminIds.includes(id)) return adminsScreen(chat, mid);
+      adminIds = adminIds.filter(i => i !== id); delete adminPerms[id]; saveCfg();
+      tgApi('sendMessage', { chat_id: id, text: 'ℹ️ Админ құқығыңыз алынды.' }).catch(() => {});
+      return adminsScreen(chat, mid, `✅ <code>${id}</code> админдерден өшірілді.`);
+    }
   }
 }
 
@@ -1255,28 +1420,30 @@ async function adminMsg(msg) {
   const text = String(msg.text || '').trim();
   const panel = st.panel;
   // админ жазған хабарламаны бірден өшіреміз (тек таратылатын хабарлама қалады: copyMessage үшін керек)
-  if (st.step !== 'bc_content') tgApi('deleteMessage', { chat_id: chat, message_id: msg.message_id }).catch(() => {});
+  if (st.step !== 'bc_content' && st.step !== 'bcg_content') tgApi('deleteMessage', { chat_id: chat, message_id: msg.message_id }).catch(() => {});
   const err = async t => { await say(chat, t, BACK, panel); return true; };
 
-  if (st.step === 'bc_content') {
-    st.step = 'bc_confirm'; st.chat = chat; st.mid = msg.message_id;
+  if (st.step === 'bc_content' || st.step === 'bcg_content') {
+    const toGroups = st.step === 'bcg_content';
+    st.step = toGroups ? 'bcg_confirm' : 'bc_confirm'; st.chat = chat; st.mid = msg.message_id;
     let n = 0;
-    for (const p of profiles.values()) if (realId(p.id) && !p.blocked) n++;
+    if (toGroups) { for (const g of groups.values()) if (g.active !== false && !g.blocked) n++; }
+    else for (const p of profiles.values()) if (realId(p.id) && !p.blocked) n++;
     await say(chat, '👆 Хабарлама осылай көрінеді.');
     const pr = await tgApi('copyMessage', { chat_id: chat, from_chat_id: chat, message_id: msg.message_id });
     if (pr && pr.ok && pr.result) track(chat, pr.result.message_id);
-    await say(chat, `Барлығы <b>${n}</b> пайдаланушыға жіберілсін бе?`, {
-      inline_keyboard: [[{ text: '✅ Жіберу', callback_data: 'a:bc_go' }, { text: '❌ Бас тарту', callback_data: 'a:menu' }]]
+    await say(chat, `Барлығы <b>${n}</b> ${toGroups ? 'топқа' : 'пайдаланушыға'} жіберілсін бе?`, {
+      inline_keyboard: [[{ text: '✅ Жіберу', callback_data: toGroups ? 'a:bcg_go' : 'a:bc_go' }, { text: '❌ Бас тарту', callback_data: 'a:menu' }]]
     });
     return true;
   }
   if (st.step === 'adm_add' || st.step === 'adm_del') {
-    if (!isMain(from)) { adminState.delete(from); return true; }
+    if (!can(from, 'admins')) { adminState.delete(from); return true; }
     if (!/^\d{4,15}$/.test(text)) return err('❗ ID тек сан болуы керек. Қайта жіберіңіз:');
     if (isMain(text)) return err('⭐ Бұл — бас админ, өзгертуге болмайды.');
     let note;
     if (st.step === 'adm_add') {
-      if (!adminIds.includes(text)) adminIds.push(text);
+      if (!adminIds.includes(text)) { adminIds.push(text); adminPerms[text] = DEFAULT_PERMS.slice(); }
       saveCfg();
       tgApi('sendMessage', { chat_id: text, text: '👮 Сізге админ құқығы берілді. Панельді ашу: /admin' }).catch(() => {});
       note = `✅ <code>${text}</code> админ болып қосылды.`;
@@ -1292,6 +1459,15 @@ async function adminMsg(msg) {
     return true;
   }
 
+  if (st.step === 'gblock') {
+    const g = groups.get(text);
+    if (!g) return err('❗ Мұндай топ табылмады. ID-ді «Қосылған топтар» тізімінен қарап, қайта жіберіңіз:');
+    setGroupBlocked(g.id, true);
+    adminState.delete(from);
+    await groupsManageScreen(chat, panel, `🚫 «${esc(g.title || g.id)}» тобы блокталды.`);
+    return true;
+  }
+
   // қалған қадамдар: пайдаланушыны ID / @username арқылы іздейді
   if (st.step === 'block' || st.step === 'unblock' || st.step === 'vip_user') {
     const p = findUser(text);
@@ -1299,10 +1475,12 @@ async function adminMsg(msg) {
     if (st.step === 'block') {
       if (isAdmin(p.id)) return err('❗ Админді блоктауға болмайды.');
       blockUser(p);
-      await showMenu(chat, from, panel, `🚫 ${label(p)} блокталды.`);
+      adminState.delete(from);
+      await usersBlockScreen(chat, panel, `🚫 ${label(p)} блокталды.`);
     } else if (st.step === 'unblock') {
       unblockUser(p);
-      await showMenu(chat, from, panel, `✅ ${label(p)} блоктан шығарылды.`);
+      adminState.delete(from);
+      await usersBlockScreen(chat, panel, `✅ ${label(p)} блоктан шығарылды.`);
     } else {
       adminState.set(from, { step: 'vip_days', uid: p.id, panel });
       await say(chat, `👑 ${label(p)}\n\nНеше күнге VIP берілсін? (санды жазыңыз, мысалы: 7)`, BACK, panel);
@@ -1322,12 +1500,13 @@ async function adminMsg(msg) {
 }
 
 // Барлығына хабарлама: copyMessage — мәтін, сурет, сілтеме, форматтау бәрі сол күйінде барады
-async function runBroadcast(adminChat, fromChat, mid) {
+async function runBroadcast(adminChat, fromChat, mid, toGroups) {
   broadcasting = true;
   const ids = [];
-  for (const p of profiles.values()) if (realId(p.id) && !p.blocked) ids.push(p.id);
+  if (toGroups) { for (const g of groups.values()) if (g.active !== false && !g.blocked) ids.push(g.id); }
+  else for (const p of profiles.values()) if (realId(p.id) && !p.blocked) ids.push(p.id);
   let ok = 0, fail = 0;
-  await say(adminChat, `📤 Жіберу басталды: ${ids.length} пайдаланушы…`);
+  await say(adminChat, `📤 Жіберу басталды: ${ids.length} ${toGroups ? 'топ' : 'пайдаланушы'}…`);
   try {
     for (const id of ids) {
       try {
@@ -1336,7 +1515,11 @@ async function runBroadcast(adminChat, fromChat, mid) {
           await sleep(((r.parameters && r.parameters.retry_after) || 3) * 1000 + 200);
           r = await tgApi('copyMessage', { chat_id: id, from_chat_id: fromChat, message_id: mid });
         }
-        if (r && r.ok) ok++; else fail++;
+        if (r && r.ok) ok++;
+        else {
+          fail++;
+          if (toGroups && r && /kicked|not found|not a member|deactivated/i.test(r.description || '')) { const gr = groups.get(String(id)); if (gr) { gr.active = false; saveGroup(gr); } }
+        }
       } catch (e) { fail++; }
       await sleep(50);   // секундына ~20 хабарлама (Telegram шегінен төмен)
     }
@@ -1416,7 +1599,9 @@ async function onBotAdded(mc) {
   const chat = mc && mc.chat;
   if (!chat || (chat.type !== 'group' && chat.type !== 'supergroup')) return;
   const was = mc.old_chat_member && mc.old_chat_member.status, now = mc.new_chat_member && mc.new_chat_member.status;
+  const gr = touchGroup(chat, ['member', 'administrator'].includes(now));
   if (!['member', 'administrator'].includes(now) || !['left', 'kicked', undefined].includes(was)) return;
+  if (gr && gr.blocked) return;
   await tgApi('sendMessage', { chat_id: chat.id, parse_mode: 'HTML', text: T(chat.id).welcome(esc(BOT_USERNAME || 'ludomilliybot')) });
 }
 
@@ -1604,6 +1789,9 @@ async function showRating(chat) {
 function postGroupResults(g) {
   if (!g.groupChat || g.posted) return;
   g.posted = true;
+  stats.groupGames = (stats.groupGames || 0) + 1; saveCfg();
+  const grp = groups.get(String(g.groupChat));
+  if (grp) { grp.games = (grp.games || 0) + 1; saveGroup(grp); }
   try { awardPoints(g); } catch (e) { console.error('rating:', e && e.message); }
   const who = s => mention({ id: s.uid, name: s.name });
   const placed = g.seats.filter(s => s.place != null).sort((a, b) => a.place - b.place);
