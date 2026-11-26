@@ -552,7 +552,7 @@ function renderGame(g) {
       el.dataset.uid = seat.id;
       el.innerHTML = '<div class="ava"></div><div class="nm"><b></b><div class="sub"><span class="hearts"><i></i><i></i><i></i></span><span class="gonemark"></span><span class="tm"></span></div></div><span class="vipbadge">VIP</span>' +
         '<button class="die" type="button" aria-label="dice"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></button>';
-      el.onclick = () => { const d = el.querySelector('.die'); if (d && d.classList.contains('ready')) { d.classList.remove('ready'); send({ t: 'roll' }); } };
+      el.onclick = () => { const d = el.querySelector('.die'); if (d && d.classList.contains('ready')) { d.classList.remove('ready'); send({ t: 'roll' }); setTimeout(() => { if (S.latest && S.screen === 'game') renderGame(S.latest); }, 1500); } };
       setAva(el.querySelector('.ava'), seat);
       S.dieBusy[c] = false;
     }
@@ -661,6 +661,12 @@ function tick() {
   let freed = false;
   for (const k in S.dieBusy) if (S.dieBusy[k] && Date.now() - (S.dieBusyAt || 0) > 2500) { S.dieBusy[k] = false; freed = true; }
   if (freed && S.latest && S.screen === 'game') renderGame(S.latest);
+  // байланыс үнсіз үзілсе (хабар жоқ 9 сек), қайта қосылады
+  if (S.screen === 'game' && S.game && S.game.winner === null && S.lastMsgAt && Date.now() - S.lastMsgAt > 9000 && Date.now() - (S.reconnAt || 0) > 6000) {
+    S.reconnAt = Date.now(); S.lastMsgAt = Date.now();
+    const old = S.ws; try { if (old) old.close(); } catch (e) { /* ештеңе */ }
+    connect();
+  }
   // серверге 3 сек сайын белгі жібереміз: мерзімі өткен гезекті сервер бірден жаңартады
   if (S.screen === 'game' && S.game && S.game.winner === null && Date.now() - (S.pingAt || 0) > 3000) { S.pingAt = Date.now(); send({ t: 'ping' }); }
   if (S.animating && S.animAt && Date.now() - S.animAt > 7000) unfreeze();
@@ -814,7 +820,7 @@ function connect() {
     const dev = qs.get('dev');
     send({ t: 'auth', initData: (tg && tg.initData) || '', dev: dev ? { id: dev, name: dev } : undefined });
   };
-  ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } onMsg(m); };
+  ws.onmessage = e => { S.lastMsgAt = Date.now(); let m; try { m = JSON.parse(e.data); } catch (x) { return; } onMsg(m); };
   ws.onclose = () => {
     if (S.ws !== ws || S.blocked) return;
     $('conn').classList.remove('hidden');
