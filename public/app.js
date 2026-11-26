@@ -467,7 +467,7 @@ function syncTokens(g) {
   if (g.moveSeq === S.moveSeq + 1) {
     S.moveSeq = g.moveSeq;
     S.animating = true; S.animAt = Date.now(); S.pick = [];
-    playMove(g).catch(() => {}).then(() => { S.animating = false; if (S.game && S.latest) syncTokens(S.latest); });
+    playMove(g).catch(() => {}).then(() => { S.animating = false; if (S.game && S.latest) { if (S.screen === 'game') renderGame(S.latest); else syncTokens(S.latest); } });
     return;
   }
   renderTokens(g);
@@ -526,9 +526,16 @@ function rollDie(c, v) {
 
 function renderGame(g) {
   S.game = g; S.latest = g;
-  S.gameEnd = Date.now() + g.ms;
+  if (!g._t0) g._t0 = Date.now();
+  S.gameEnd = g._t0 + g.ms;
+  syncTokens(g);                         // тас жүру анимациясы осы жерден басталады
+  if (!S.animating) S.shownTurn = g.turn;
+  // тас толық жүріп біткенше кезек (және кубик) алдыңғы ойыншыда қалады
+  const turnC = S.animating && S.shownTurn !== undefined && S.shownTurn !== null ? S.shownTurn : g.turn;
+  const dispPhase = S.animating && turnC !== g.turn ? 'wait' : g.phase;
   const mine = g.seats.find(s => s.id === S.me.id);
   const myTurn = Boolean(mine && g.turn === mine.color);
+  const myTurnShown = Boolean(mine && turnC === mine.color);
 
   // лақтырылған кубик анимациясы (тек лақтырған адамның кубигінде)
   if (g.rollSeq !== S.rollSeq) {
@@ -558,34 +565,33 @@ function renderGame(g) {
     }
     el.classList.toggle('gone', Boolean(seat.left));
     el.querySelector('.gonemark').textContent = seat.left && seat.place == null ? '🚪 ' + t('leftMark') : seat.place != null ? placeLabel(seat) : '';
-    el.classList.toggle('act', g.turn === c && g.winner === null && !seat.left);
+    el.classList.toggle('act', turnC === c && g.winner === null && !seat.left);
     const lives = seat.lives == null ? 3 : seat.lives;
     el.querySelectorAll('.hearts i').forEach((p, i) => p.classList.toggle('on', i < lives));
     el.querySelector('b').textContent = seat.id === S.me.id ? t('you') : seat.name;
     if (!S.dieBusy[c]) setDie(c, seat.dice);
-    el.querySelector('.die').classList.toggle('ready', seat.id === S.me.id && g.turn === c && g.phase === 'roll' && g.winner === null && !S.dieBusy[c]);
+    el.querySelector('.die').classList.toggle('ready', seat.id === S.me.id && g.turn === c && g.phase === 'roll' && g.winner === null && !S.dieBusy[c] && !S.animating);
   }
 
-  syncTokens(g);
   $('btnChatG').classList.toggle('lock', Boolean(g.spectator && !(S.info && S.info.vip)));
   renderMedals(g);
   updStk(g, mine);
 
-  const turnSeat = g.seats.find(s => s.color === g.turn);
+  const turnSeat = g.seats.find(s => s.color === turnC);
   let hintTxt = '';
   if (g.winner === null) {
     if (g.spectator) hintTxt = '👁 ' + t('watching') + (g.viewers > 1 ? ' · ' + g.viewers : '');
-    else if (myTurn && g.phase === 'roll') hintTxt = '🎲 ' + t('hintRoll');
-    else if (myTurn && g.phase === 'move') hintTxt = '👆 ' + t('hintMove');
-    else if (turnSeat && g.phase !== 'over') hintTxt = turnSeat.name + ' ' + t('hintOther');
+    else if (myTurnShown && dispPhase === 'roll') hintTxt = '🎲 ' + t('hintRoll');
+    else if (myTurnShown && dispPhase === 'move') hintTxt = '👆 ' + t('hintMove');
+    else if (turnSeat && dispPhase !== 'over') hintTxt = turnSeat.name + ' ' + t('hintOther');
   }
   const hintEl = $('hint');
   hintEl.textContent = hintTxt;
   hintEl.classList.toggle('empty', !hintTxt);
-  hintEl.classList.toggle('mine', Boolean(hintTxt && myTurn && g.winner === null && !g.spectator));
-  hintEl.style.setProperty('--hc', C[g.turn] || '#9aa0c4');
-  if (myTurn && !S.lastTurnMine) haptic('success');
-  S.lastTurnMine = myTurn;
+  hintEl.classList.toggle('mine', Boolean(hintTxt && myTurnShown && g.winner === null && !g.spectator));
+  hintEl.style.setProperty('--hc', C[turnC] || '#9aa0c4');
+  if (myTurnShown && !S.lastTurnMine) haptic('success');
+  S.lastTurnMine = myTurnShown;
 
   if (g.winner !== null) {
     const show = () => {
