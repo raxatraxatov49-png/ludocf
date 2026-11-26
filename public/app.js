@@ -501,7 +501,7 @@ function cubeFaces(v) {
 function rollDie(c, v) {
   const d = dieEl(c);
   if (!d) return;
-  S.dieBusy[c] = true;
+  S.dieBusy[c] = true; S.dieBusyAt = Date.now();
   clearTimeout(d._rt);
   const old = d.querySelector('.cube'); if (old) old.remove();
   d.classList.remove('land', 'ready');
@@ -657,6 +657,12 @@ function unfreeze() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) unfreeze(); });
 function tick() {
   tickExtra();
+  // кубик «қатып» қалмауы үшін: 2.5 сек артық бос емес болса, босатамыз
+  let freed = false;
+  for (const k in S.dieBusy) if (S.dieBusy[k] && Date.now() - (S.dieBusyAt || 0) > 2500) { S.dieBusy[k] = false; freed = true; }
+  if (freed && S.latest && S.screen === 'game') renderGame(S.latest);
+  // серверге 3 сек сайын белгі жібереміз: мерзімі өткен гезекті сервер бірден жаңартады
+  if (S.screen === 'game' && S.game && S.game.winner === null && Date.now() - (S.pingAt || 0) > 3000) { S.pingAt = Date.now(); send({ t: 'ping' }); }
   if (S.animating && S.animAt && Date.now() - S.animAt > 7000) unfreeze();
   if (S.screen === 'wait' && S.queue && !S.room) {
     const left = Math.max(0, Math.ceil((S.queueEnd - Date.now()) / 1000));
