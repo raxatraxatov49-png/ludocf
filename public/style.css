@@ -327,3 +327,42 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
   88%{transform:translateY(-2px) scale(1.07) rotateX(700deg) rotateY(690deg) rotateZ(340deg)}
   100%{transform:translateY(0) scale(1) rotateX(720deg) rotateY(720deg) rotateZ(360deg)}}
 #meStats{margin-left:8px}
+/* === Батырма жылтыры === */
+.hero button.gold,
+.hero button.blue {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero button.gold::after,
+.hero button.blue::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    110deg,
+    transparent,
+    rgba(255, 255, 255, .55),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: btnshine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* көк батырма жылтыры сәл кешігіп жүрсін */
+.hero button.blue::after { animation-delay: 1.2s; }
+
+@keyframes btnshine {
+  0%   { left: -80%; }
+  55%  { left: 140%; }
+  100% { left: 140%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero button.gold::after,
+  .hero button.blue::after { animation: none; }
+}
