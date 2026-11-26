@@ -361,3 +361,41 @@ html, body { background: #000; }
   .hero button.gold::after,
   .hero button.blue::after { animation: none; }
 }
+
+/* === Күту экраны: жаңа дизайн === */
+#wait { background: #000; }
+#wait::before {
+  content: ""; position: fixed; left: 0; right: 0; top: 0; height: 360px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(234,181,68,.16), transparent 65%);
+  pointer-events: none;
+}
+.wtitle { position: relative; margin: 56px 0 4px; font-size: 26px; font-weight: 800; letter-spacing: -.3px; }
+.wcount { position: relative; font-size: 44px; font-weight: 900; color: #f9d878; line-height: 1.1; }
+.wtimer {
+  position: relative; min-height: 0; margin: 12px 0 0; padding: 7px 16px;
+  border-radius: 999px; background: #14140f; border: 1px solid rgba(249,216,120,.35);
+  font-size: 15px; font-weight: 800; letter-spacing: .5px; color: #f9d878;
+}
+.wtimer:empty { display: none; }
+.slots { position: relative; margin: 26px 0 8px; }
+.slot {
+  height: 92px; border-radius: 24px; padding: 0 14px; gap: 12px;
+  background: linear-gradient(160deg, #18181f, #0b0b0e);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, #222);
+  box-shadow: inset 0 0 40px -18px var(--c);
+}
+.slot:nth-child(1) { --c: #d94f3d; }
+.slot:nth-child(2) { --c: #43a05c; }
+.slot:nth-child(3) { --c: #eab544; }
+.slot:nth-child(4) { --c: #4382de; }
+.slot.empty {
+  background: rgba(255,255,255,.02); border: 1.5px dashed rgba(255,255,255,.12); box-shadow: none;
+}
+.slot.me { border-color: color-mix(in srgb, var(--c) 45%, #222); }
+.slot .ava {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 3px solid var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.slot .nm b { font-size: 16px; font-weight: 800; }
+.slot .nm small { color: var(--c); filter: brightness(1.25); font-weight: 700; font-size: 13px; }
+.dots i { width: 9px; height: 9px; background: #6a6f92; }
