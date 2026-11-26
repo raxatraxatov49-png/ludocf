@@ -385,6 +385,7 @@ function sendGame(u) {
 }
 
 function broadcastGame(g) {
+  saveGames();
   const msg = snapshot(g);
   g.seats.forEach(s => { if (!s.left) { const u = users.get(s.uid); if (u && u.game === g.id) send(u, msg); } });
   if (g.watchers.size) {
@@ -397,6 +398,62 @@ function shuffle(a) {
   a = a.slice();
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
+}
+
+/* ================= Ойындарды сақтау / қалпына келтіру =================
+   Сервер (Durable Object) қайта қосылса, жадтағы ойындар жоғалмайды: күй Durable Object сақтауына
+   жазылады да, іске қосылғанда қайта жүктеледі. Ойыншылар қайта қосылғанда ойынға өздігінен оралады. */
+const GAMES_SAVE_MS = 3000;
+let gmTimer = null;
+const serGame = g => { const o = {}; for (const k of Object.keys(g)) { if (k === 'timer' || k === 'timerFn' || k === 'watchers') continue; o[k] = g[k]; } return o; };
+function saveGames() {
+  if (gmTimer) return;
+  gmTimer = setTimeout(() => {
+    gmTimer = null;
+    try {
+      if (!CF.putNow) return;
+      Promise.resolve(CF.putNow('games:all', Array.from(games.values()).map(serGame))).catch(e => console.error('games save:', e && e.message));
+    } catch (e) { console.error('games save:', e && e.message); }
+  }, GAMES_SAVE_MS);
+}
+function resumeGame(g) {
+  const seat = cur(g);
+  if (!seat) return destroyGame(g);
+  if (g.phase === 'wait') {              // кубик лақтырылған, автоматты әрекет күтіліп тұрған
+    if (g.legal && g.legal.length === 1) { const only = g.legal[0]; setTimer(g, 1300, () => moveToken(g, only)); }
+    else setTimer(g, 1700, () => nextTurn(g));
+  } else {
+    setTimer(g, seat.auto ? AUTO_MS : TURN_MS, () => onTimeout(g));   // ойыншыға толық жаңа уақыт беріледі
+  }
+}
+async function restoreGames() {
+  try {
+    if (!CF.listNow) return;
+    const m = await CF.listNow('games:');
+    const list = m && m.get && m.get('games:all');
+    if (!Array.isArray(list)) return;
+    const now = Date.now();
+    let n = 0;
+    for (const o of list) {
+      if (!o || !o.id || !Array.isArray(o.seats) || !o.seats.length || games.has(o.id)) continue;
+      const g = Object.assign({}, o, { timer: null, timerFn: null, watchers: new Set(), emptySince: now });
+      if (!Array.isArray(g.chat)) g.chat = [];
+      games.set(g.id, g);
+      const num = Number(String(g.id).slice(1));
+      if (num > gameSeq) gameSeq = num;
+      if (g.winner === null) resumeGame(g);
+      n++;
+    }
+    console.log('ойындар қалпына келтірілді:', n);
+  } catch (e) { console.error('games restore:', e && e.message); }
+}
+function findGameOf(id) {
+  for (const g of games.values()) {
+    if (g.winner !== null) continue;
+    const s = seatOf(g, id);
+    if (s && !s.left) return g;
+  }
+  return null;
 }
 
 function startGame(list, ranked) {
@@ -583,6 +640,7 @@ function destroyGame(g) {
   clearTimeout(g.timer);
   dropStartMsg(g);
   games.delete(g.id);
+  saveGames();
   for (const id of g.watchers) { const w = users.get(id); if (w && w.watch === g.id) { w.watch = null; send(w, { t: 'idle' }); } }
   g.watchers.clear();
   g.seats.forEach(s => { const u = users.get(s.uid); if (u && u.game === g.id) u.game = null; });
@@ -852,6 +910,7 @@ function onAuth(ws, m) {
   if (u && u.ws && u.ws !== ws) { send(u, { t: 'replaced' }); u.ws.close(); }
   if (!u) { u = { id: info.id, game: null, ws: null }; users.set(info.id, u); }
   u.name = info.name; u.avatar = info.avatar || null; u.username = info.username || ''; u.ws = ws;
+  if (!u.game) { const og = findGameOf(u.id); if (og) u.game = og.id; }   // сервер қайта қосылғаннан кейін ойынға қайтару
   ws.user = u;
   const prof = touchProfile(u, true);
   send(u, { t: 'hello', me: pub(u), bot: BOT_USERNAME, app: MINI_APP_SHORT, dnd: Boolean(prof.dnd), catalog: SK.SKINS, info: meInfo(prof) });
@@ -1834,6 +1893,6 @@ const server = http.createServer(async (req, res) => {
   res.end('not found');
 });
 
-loadProfiles().finally(() => server.listen(3000, () => { setupTelegram(); }));
+loadProfiles().then(restoreGames).finally(() => server.listen(3000, () => { setupTelegram(); }));
 
 module.exports = { handle, users, games, rooms, profiles };
