@@ -399,3 +399,37 @@ html, body { background: #000; }
 .slot .nm b { font-size: 16px; font-weight: 800; }
 .slot .nm small { color: var(--c); filter: brightness(1.25); font-weight: 700; font-size: 13px; }
 .dots i { width: 9px; height: 9px; background: #6a6f92; }
+
+/* === Мәзір шит (Шығу / Жабу): шашкадағыдай === */
+.sheetov {
+  background: rgba(0,0,0,.72);
+  animation: sheetfade .2s both;
+}
+.sheet {
+  max-width: none;
+  background: #1c1c1c;
+  border: 1px solid #333;
+  border-radius: 28px 28px 0 0;
+  padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  gap: 6px;
+  animation: sheetup .28s cubic-bezier(.2, .9, .3, 1) both;
+}
+.sbtn {
+  height: 46px;
+  padding: 0;
+  border-radius: 14px;
+  background: #303030;
+  color: #eee;
+  font-size: 16px;
+  font-weight: 600;
+}
+.sbtn.red {
+  height: 52px;
+  border-radius: 16px;
+  background: #c73535;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+}
+@keyframes sheetup   { from { transform: translateY(100%); } }
+@keyframes sheetfade { from { opacity: 0; } }
