@@ -308,16 +308,16 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 #menu .ringava.novip{box-shadow:none}
 #menu .pn b{color:#fff}
 
-#menu .hero{background:linear-gradient(155deg,#3b2c82 0%,#221a55 55%,#15103a 100%);
-  border:1px solid rgba(160,140,255,.35);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 12px 32px rgba(40,20,120,.45)}
+#menu .hero{background:linear-gradient(180deg,#151515,#0a0a0a);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 10px 28px rgba(0,0,0,.6)}
 #menu .hero>*{position:relative;z-index:1}
 #menu .hero h2{color:#fff}
-#menu .hero p{color:#b9b4e6}
+#menu .hero p{color:#9aa0c4}
 #menu .hero button.gold{background:linear-gradient(180deg,#fbe08f,#e9b24f);color:#2a1c00;
   box-shadow:0 4px 0 #b98322,0 10px 26px rgba(240,180,70,.38)}
-#menu .hero button.blue{background:linear-gradient(180deg,#7cabff,#4571e0);color:#fff;
-  box-shadow:0 4px 0 #2d4fb0,0 10px 26px rgba(69,113,224,.4)}
+#menu .hero button.blue{background:linear-gradient(180deg,#fbe08f,#e9b24f);color:#2a1c00;
+  box-shadow:0 4px 0 #b98322,0 10px 26px rgba(240,180,70,.38)}
 
 #menu .row{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 24px rgba(0,0,0,.5)}
