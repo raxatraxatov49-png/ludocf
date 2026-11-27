@@ -189,3 +189,41 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 
 /* ---- Ойын: «жүріс жасауда» белгісі жоғарыға көтерілді, профильден алшақ ---- */
 #game .hint{position:relative;top:-14px}
+
+/* ===== FIX: ойын экраны барлық телефонда (Android + iPhone) бірдей ===== */
+:root{--sab:calc(env(safe-area-inset-bottom,0px) + var(--tg-safe-area-inset-bottom,0px))}
+
+/* 1) Профиль карточкасы: таймер мен жүрек кубиктің астында қалмайды */
+#game .pcard{--d:clamp(38px,11.4vw,44px);padding:6px 8px;gap:7px;min-height:60px}
+#game .pcard .ava{flex:none;width:34px;height:34px}
+#game .pcard .nm{flex:1 1 0;min-width:0}
+#game .pcard .nm b{font-size:clamp(12px,3.5vw,14px)}
+#game .sub{flex-wrap:wrap;row-gap:1px;column-gap:5px;margin-top:3px}
+#game .hearts{gap:2px}
+#game .hearts i{width:12px;height:11px}
+#game .tm{margin-left:0;font-size:12px;font-weight:700;line-height:14px}
+#game .die{flex:none;width:var(--d);height:var(--d);padding:calc(var(--d) * .16)}
+#game .die i{width:calc(var(--d) * .18);height:calc(var(--d) * .18)}
+#game .face{padding:calc(var(--d) * .16)}
+#game .face.front{transform:translateZ(calc(var(--d) / 2))}
+#game .face.back{transform:rotateY(180deg) translateZ(calc(var(--d) / 2))}
+#game .face.right{transform:rotateY(90deg) translateZ(calc(var(--d) / 2))}
+#game .face.left{transform:rotateY(-90deg) translateZ(calc(var(--d) / 2))}
+#game .face.top{transform:rotateX(90deg) translateZ(calc(var(--d) / 2))}
+#game .face.bottom{transform:rotateX(-90deg) translateZ(calc(var(--d) / 2))}
+
+/* 2) Тақта экранға биіктік бойынша да сыяды (қысқа экранда кішірейеді, кесілмейді) */
+#game .bar{position:relative;z-index:2}
+#game .bar.top{margin-bottom:3px}
+#game .boardwrap{position:relative;flex:0 1 auto;width:100%;max-width:520px;aspect-ratio:15.3 / 15.1;min-height:0;margin:6px 0}
+#game #board{position:absolute;left:0;width:100%;top:-5.63%;height:105.63%}
+@supports not (aspect-ratio:1 / 1){
+  #game .boardwrap{aspect-ratio:auto;flex:none}
+  #game #board{position:static;width:100%;height:auto}
+  #game .bar.top{margin-bottom:calc(3px - min(100vw - 16px, 520px) * .0556)}
+}
+
+/* 3) Төменгі панель Android жүйелік батырмаларының астында қалмайды */
+#game,#wait{padding-bottom:calc(92px + max(12px,var(--sab)))}
+.gbar{bottom:max(12px,var(--sab))}
+.sheet{padding-bottom:calc(var(--sab) + 16px)}
