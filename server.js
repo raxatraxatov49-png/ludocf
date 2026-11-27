@@ -698,7 +698,7 @@ function playersBaseList() {
     const on = isOnline(u);
     const busy = on && activeGame(u);
     list.push({ id, name: p.name, avatar: p.avatar || null, status: on ? (busy ? 'game' : 'online') : 'offline',
-      watch: busy, dnd: Boolean(p.dnd), seen: on ? now : (p.seen || 0) });
+      watch: busy, dnd: Boolean(p.dnd), vip: isVip(p), seen: on ? now : (p.seen || 0) });
   }
   const order = { online: 0, game: 1, offline: 2 };
   list.sort((a, b) => (order[a.status] - order[b.status]) || (b.seen - a.seen));
