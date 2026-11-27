@@ -264,3 +264,39 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 .nav.dragging button.on:not(.under) svg{transform:none}
 .nav.dragging button.on:not(.under){color:#b9b6d6}
 .nav button.under{color:#fff}
+
+/* === Бас мәзір: 1 экранға сыятын ықшам нұсқа === */
+#menu{overflow:hidden;padding-top:calc(var(--sat) + 8px)}
+#menu,.navscr{padding-bottom:calc(76px + max(8px,env(safe-area-inset-bottom)))}
+#menu .menuwrap{gap:clamp(7px,1.5vh,12px)}
+#menu .prof{padding:6px 10px;border-radius:18px;gap:10px}
+#menu .ringava{width:40px;height:40px;border-width:2px;padding:2px}
+#menu .crown{font-size:14px;top:-11px}
+#menu .pn b{font-size:15px}
+#menu .pn small{font-size:11.5px}
+#menu .hero{padding:clamp(10px,1.7vh,14px) 14px clamp(10px,1.5vh,13px);border-radius:20px}
+#menu .hero h2{font-size:clamp(17px,2.5vh,20px);margin-bottom:3px}
+#menu .hero p{font-size:12.5px;margin-bottom:clamp(7px,1.3vh,10px)}
+#menu .hero button{padding:clamp(10px,1.7vh,13px);border-radius:14px;font-size:14px;letter-spacing:1.5px}
+#menu .row{padding:8px 12px;border-radius:18px;gap:10px}
+#menu .row .ico{width:36px;height:36px;border-radius:11px;font-size:19px}
+#menu .row .rt b{font-size:15px}
+#menu .row .rt em{font-size:12px}
+#menu .row .rt em::before{width:9px;height:9px}
+#menu .row .chev{font-size:24px}
+
+/* === Тіл батырмасы және таңдау парағы === */
+.langbtn{display:flex;align-items:center;gap:5px;height:32px;padding:0 8px 0 10px;border-radius:16px;font-size:12px;font-weight:800;color:#f4f4ff;flex:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.langbtn svg{width:15px;height:15px}
+.langbtn .cv{width:12px;height:12px;opacity:.7}
+.langbtn:active{transform:scale(.95)}
+#langs.sheet .sbtn{text-align:left;padding-left:20px}
+#langs.sheet .sbtn.on{background:linear-gradient(180deg,#fbe08f,#e8b04e);color:#2a1c00}
+
+/* === Төменгі навигация: ықшам өлшем === */
+.nav{left:24px;right:24px;max-width:340px;padding:4px;border-radius:26px;bottom:max(10px,env(safe-area-inset-bottom))}
+.nav button{padding:6px 2px 5px;font-size:11px;gap:1px;border-radius:22px}
+.nav button svg{width:21px;height:21px}
+.nav .lens{border-radius:22px}
