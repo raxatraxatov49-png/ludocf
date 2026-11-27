@@ -340,3 +340,9 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 /* === Ойыншылар тізімі: VIP ойыншының аватарында алтын сақина === */
 #players .pl.isvip .ava{
   box-shadow:0 0 0 2px #202020,0 0 0 4px #f4c542,0 0 14px rgba(244,197,66,.5)}
+
+/* === Ойын тақтасы сәл төмен түсті: жоғарғы профиль мен кубик тастың басын жаппайды === */
+#game .boardwrap{margin-top:calc(6px + min(100vw - 16px, 520px) * .0556)}
+@supports not (aspect-ratio:1 / 1){
+  #game .boardwrap{margin-top:6px}
+}
