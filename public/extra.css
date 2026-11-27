@@ -227,3 +227,12 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 #game,#wait{padding-bottom:calc(92px + max(12px,var(--sab)))}
 .gbar{bottom:max(12px,var(--sab))}
 .sheet{padding-bottom:calc(var(--sab) + 16px)}
+
+/* ===== FIX: Дүкен карточкалары тегіс: кубик тастарға тимейді, батырмалар бір деңгейде ===== */
+.shopgrid{align-items:stretch}
+.sk{height:100%}
+.sk .pv{align-items:center;gap:8px;padding:12px 10px}
+.sk .pv svg{flex:1 1 0;min-width:0;width:auto;height:auto}
+.sk .dmini{position:static;flex:none;width:34px;height:34px;padding:6px;border-radius:9px}
+.sk .dmini i{width:5px;height:5px}
+.sk button{margin-top:auto}
