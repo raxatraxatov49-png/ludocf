@@ -265,25 +265,25 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 .nav.dragging button.on:not(.under){color:#b9b6d6}
 .nav button.under{color:#fff}
 
-/* === Бас мәзір: 1 экранға сыятын ықшам нұсқа === */
-#menu{overflow:hidden;padding-top:calc(var(--sat) + 8px)}
-#menu,.navscr{padding-bottom:calc(76px + max(8px,env(safe-area-inset-bottom)))}
-#menu .menuwrap{gap:clamp(7px,1.5vh,12px)}
-#menu .prof{padding:6px 10px;border-radius:18px;gap:10px}
-#menu .ringava{width:40px;height:40px;border-width:2px;padding:2px}
-#menu .crown{font-size:14px;top:-11px}
-#menu .pn b{font-size:15px}
-#menu .pn small{font-size:11.5px}
-#menu .hero{padding:clamp(10px,1.7vh,14px) 14px clamp(10px,1.5vh,13px);border-radius:20px}
-#menu .hero h2{font-size:clamp(17px,2.5vh,20px);margin-bottom:3px}
-#menu .hero p{font-size:12.5px;margin-bottom:clamp(7px,1.3vh,10px)}
-#menu .hero button{padding:clamp(10px,1.7vh,13px);border-radius:14px;font-size:14px;letter-spacing:1.5px}
-#menu .row{padding:8px 12px;border-radius:18px;gap:10px}
-#menu .row .ico{width:36px;height:36px;border-radius:11px;font-size:19px}
-#menu .row .rt b{font-size:15px}
-#menu .row .rt em{font-size:12px}
-#menu .row .rt em::before{width:9px;height:9px}
-#menu .row .chev{font-size:24px}
+/* === Бас мәзір: экранды толтыратын, бірақ айналмайтын нұсқа === */
+#menu{overflow:hidden;padding-top:calc(var(--sat) + 10px)}
+#menu,.navscr{padding-bottom:calc(88px + max(10px,env(safe-area-inset-bottom)))}
+#menu .menuwrap{flex:1;min-height:0;gap:clamp(10px,1.8vh,16px)}
+#menu .prof{flex:none;padding:10px 12px;border-radius:22px;gap:12px}
+#menu .ringava{width:54px;height:54px;border-width:3px;padding:3px}
+#menu .crown{font-size:19px;top:-15px}
+#menu .pn b{font-size:19px}
+#menu .pn small{font-size:14px}
+#menu .hero{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:14px 16px;border-radius:26px}
+#menu .hero h2{font-size:clamp(22px,3.4vh,30px);margin-bottom:6px}
+#menu .hero p{font-size:clamp(13.5px,1.9vh,16px);margin-bottom:clamp(12px,2.2vh,20px)}
+#menu .hero button{padding:clamp(14px,2.4vh,20px);border-radius:18px;font-size:clamp(15px,2.1vh,18px);letter-spacing:2px}
+#menu .row{flex:none;padding:12px 14px;border-radius:24px;gap:14px}
+#menu .row .ico{width:50px;height:50px;border-radius:15px;font-size:26px}
+#menu .row .rt b{font-size:20px}
+#menu .row .rt em{font-size:15px}
+#menu .row .rt em::before{width:12px;height:12px}
+#menu .row .chev{font-size:30px}
 
 /* === Тіл батырмасы және таңдау парағы === */
 .langbtn{display:flex;align-items:center;gap:5px;height:32px;padding:0 8px 0 10px;border-radius:16px;font-size:12px;font-weight:800;color:#f4f4ff;flex:none;
@@ -295,8 +295,8 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 #langs.sheet .sbtn{text-align:left;padding-left:20px}
 #langs.sheet .sbtn.on{background:linear-gradient(180deg,#fbe08f,#e8b04e);color:#2a1c00}
 
-/* === Төменгі навигация: ықшам өлшем === */
-.nav{left:24px;right:24px;max-width:340px;padding:4px;border-radius:26px;bottom:max(10px,env(safe-area-inset-bottom))}
-.nav button{padding:6px 2px 5px;font-size:11px;gap:1px;border-radius:22px}
-.nav button svg{width:21px;height:21px}
-.nav .lens{border-radius:22px}
+/* === Төменгі навигация: орташа өлшем === */
+.nav{left:20px;right:20px;max-width:390px;padding:5px;border-radius:28px;bottom:max(12px,env(safe-area-inset-bottom))}
+.nav button{padding:8px 2px 6px;font-size:12px;gap:2px;border-radius:23px}
+.nav button svg{width:24px;height:24px}
+.nav .lens{border-radius:23px}
