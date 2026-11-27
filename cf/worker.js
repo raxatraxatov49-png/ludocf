@@ -43,6 +43,8 @@ export class Hub extends DurableObject {
     state.putNow = (k, v) => this.ctx.storage.put(k, v);
     state.delNow = (k) => this.ctx.storage.delete(k);
     state.listNow = (prefix) => this.ctx.storage.list({ prefix });
+    // Alarm: әр іске қосылу жаңа сұраныс есебінде (50 шақыру шегі жаңарады) — хабарлама жіберуді автоматты жалғастыру үшін
+    state.setAlarm = (ms) => this.ctx.storage.setAlarm(Date.now() + ms);
     // Іске қосылу кешіксе де, кейін аяқталғанда DO қалпына келуі үшін ready ешқашан «қате» болмайды.
     // Күту уақыты әр сұраныста бөлек шектеледі.
     this.bootAt = Date.now();
@@ -66,6 +68,11 @@ export class Hub extends DurableObject {
         new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('startup timeout')), ms); })
       ]);
     } finally { clearTimeout(timer); }
+  }
+
+  async alarm() {
+    await this.waitReady(25000);          // дайын болмаса қате лақтырылады, Cloudflare alarm-ды өзі қайталайды
+    if (state.onAlarm) await state.onAlarm();
   }
 
   async fetch(request) {
