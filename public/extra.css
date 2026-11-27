@@ -341,52 +341,8 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 #players .pl.isvip .ava{
   box-shadow:0 0 0 2px #202020,0 0 0 4px #f4c542,0 0 14px rgba(244,197,66,.5)}
 
-/* === Ойын тақтасы: жоғарғы және төменгі профильдің дәл ортасында ===
-   Тақта суретінің үстінде тастарға арналған бос орын бар (5.63%), сондықтан
-   көрінетін жиек профильден 6px+3px қашықтықта, төменгі жағы да сондай. */
-#game .boardwrap{margin-top:6px;margin-bottom:6px;z-index:3}
-/* тақта (және тастар) профильдің үстінде тұрады - тастар профильдің астында қалмайды */
-#game #board{z-index:3}
-#game .bar.top{margin-bottom:3px}
-
-
-/* ===== Ludo VIP бөлімі: Шашкадағыдай көрініс (тақырып, тізім, төменгі панель, навигация) ===== */
-
-/* бет өзі айналады, төменгі панель бекітілген */
-#vip{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(340px + max(12px,var(--sab)))}
-#vip .pg{gap:0;max-width:520px}
-
-/* тақырып: жоғарырақ, астында жіңішке сызық */
-#vip .pghead{margin-top:-22px;padding:0 0 14px;border-bottom:1px solid rgba(255,255,255,.1);position:relative}
-#vip .pghead::after{content:"";position:absolute;left:-20px;right:-20px;bottom:-1px;height:1px;background:rgba(255,255,255,.1)}
-#vip .pghead{border-bottom:0}
-#vip .pghead h1{font-size:32px;font-weight:900;letter-spacing:-.3px;color:var(--gold2)}
-
-/* күй жолағы: «VIP белсенді...» сияқты күңгірт алтын */
-#vip .vsub{margin:12px 0 6px;color:#b08f3a;font-size:15.5px;font-weight:600;line-height:1.3}
-
-/* артықшылықтар: қорапсыз, сол жағында төртбұрышты иконка */
-#vip .perks{gap:26px;margin:14px 0 0;padding:0}
-#vip .perks li{align-items:flex-start;gap:16px;padding:0;background:none;border:0;border-radius:0}
-#vip .perks li i{flex:none;width:40px;height:40px;border-radius:12px;background:#2a2312;display:grid;place-items:center;font-size:20px;line-height:1;overflow:hidden}
-#vip .perks li b{margin:0 0 4px;font-size:18px;font-weight:800;color:#fff;line-height:1.25}
-#vip .perks li span{display:block;font-size:15.5px;line-height:1.35;color:#8b8b8b}
-
-/* төменгі панель: прогресс, санағыш, үлкен батырма, түсіндірме (навигацияның үстінде бекітілген) */
-#vip .vipcard:not(.on){position:fixed;left:0;right:0;bottom:calc(max(12px,var(--sab)) + 82px);z-index:5;
-  max-width:none;margin:0 auto;padding:14px 20px 8px;border-radius:0;border:0;border-top:1px solid rgba(255,255,255,.1);
-  background:rgba(10,10,10,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:none;text-align:center}
-#vip .vipcard:not(.on)>*{max-width:520px;margin-left:auto;margin-right:auto}
-#vip .vipcard:not(.on) .vcrown{display:none}
-#vip .bar7{margin:0 0 10px;gap:5px}
-#vip .bar7 i{height:8px}
-#vip .vcount{margin:0 0 12px;font-size:17px;font-weight:800;color:var(--gold2)}
-#vip .vipcard .pill{display:block;width:100%;height:56px;padding:0;margin:0 0 12px;border-radius:999px;font-size:21px;font-weight:900;letter-spacing:0;text-transform:none;line-height:56px;
-  background:linear-gradient(180deg,#fbe08f,#e9b24f);color:#2a1c00;box-shadow:0 4px 0 #b98322,0 8px 22px rgba(240,180,70,.3)}
-#vip .vhow{font-size:13.5px;line-height:1.35;color:#8b8b8b}
-
-/* төменгі навигация: үлкенірек, кеңірек (Шашкадағыдай) */
-.nav{left:14px;right:14px;max-width:520px;padding:6px;border-radius:32px;bottom:max(12px,var(--sab))}
-.nav button{padding:10px 2px 8px;font-size:15px;gap:3px;border-radius:26px}
-.nav button svg{width:28px;height:28px}
-.nav .lens{border-radius:26px}
+/* === Ойын тақтасы сәл төмен түсті: жоғарғы профиль мен кубик тастың басын жаппайды === */
+#game .boardwrap{margin-top:calc(6px + min(100vw - 16px, 520px) * .0556)}
+@supports not (aspect-ratio:1 / 1){
+  #game .boardwrap{margin-top:6px}
+}
