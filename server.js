@@ -1147,6 +1147,8 @@ async function loadCfg() {
     const s = m.get('cfg:stats');
     if (s && Number.isFinite(s.games)) stats.games = s.games;
     if (s && Number.isFinite(s.groupGames)) stats.groupGames = s.groupGames;
+    const bj = m.get('cfg:bcjob');
+    if (bj && Array.isArray(bj.ids) && bj.i < bj.ids.length) bcJob = bj;
     const pm = m.get('cfg:perms');
     if (pm && typeof pm === 'object') adminPerms = pm;
     const grm = await dbList('gr:');
@@ -1186,6 +1188,7 @@ function touchBotUser(from) {
   if (un !== (p.username || '')) { p.username = un; changed = true; }
   const lg = String(from.language_code || '').slice(0, 2).toLowerCase();
   if (L10.blocked[lg] && p.lang !== lg) { p.lang = lg; changed = true; }
+  if (p.tgGone) { delete p.tgGone; changed = true; }   // қайта жазды: хабарлама жіберуге болады
   if (changed) { playersBaseAt = 0; saveProfile(p); }
   return p;
 }
@@ -1421,7 +1424,7 @@ async function adminPermScreen(chat, mid, id, notice) {
 }
 
 // батырма → қажетті рұқсат
-const PERM_OF = { stats: 'stats', gl: 'groups', g: 'groups', games: 'games', bcg: 'bc_groups', bcg_go: 'bc_groups', bc: 'bc_users', bc_go: 'bc_users',
+const PERM_OF = { stats: 'stats', gl: 'groups', g: 'groups', games: 'games', bcg: 'bc_groups', bcg_go: 'bc_groups', bc: 'bc_users', bc_go: 'bc_users', bc_next: 'bc_users', bc_stop: 'bc_users',
   vip: 'vip', ub: 'block', block: 'block', unblock: 'block', uu: 'block', gm: 'grpmgmt', gb: 'grpmgmt', gu: 'grpmgmt', gadd: 'grpmgmt',
   admins: 'admins', adm_add: 'admins', ap: 'admins', pt: 'admins', ad: 'admins' };
 
@@ -1454,8 +1457,16 @@ async function adminCb(cb) {
       if (!st || st.step !== (toGroups ? 'bcg_confirm' : 'bc_confirm')) return;
       adminState.delete(from);
       if (broadcasting) return say(chat, '⏳ Басқа хабарлама жіберіліп жатыр, күте тұрыңыз.', BACK, mid);
-      runBroadcast(chat, st.chat, st.mid, toGroups);
-      return;
+      bcJob = { adminChat: chat, fromChat: st.chat, mid: st.mid, toGroups, ids: bcTargets(toGroups), i: 0, ok: 0, fail: 0, errs: {} };
+      return bcRun(chat, mid);
+    }
+    case 'bc_next': {
+      if (broadcasting) return answer('⏳ Жіберіліп жатыр…');
+      return bcRun(chat, mid);
+    }
+    case 'bc_stop': {
+      const j = bcJob; bcJob = null; dbPut('cfg:bcjob', null);
+      return showMenu(chat, from, mid, j ? `⏹ Жіберу тоқтатылды.\n\n📬 Жеткізілді: <b>${j.ok}</b>\n⚠️ Жеткізілмеді: <b>${j.fail}</b>\n⏳ Жіберілмей қалды: <b>${j.ids.length - j.i}</b>` : null);
     }
     case 'vip': return ask('vip_user', '👑 VIP беру\n\nПайдаланушының <b>ID</b> немесе <b>@username</b> жіберіңіз:');
     case 'ub': case 'unblock': adminState.delete(from); return usersBlockScreen(chat, mid);
@@ -1502,9 +1513,7 @@ async function adminMsg(msg) {
   if (st.step === 'bc_content' || st.step === 'bcg_content') {
     const toGroups = st.step === 'bcg_content';
     st.step = toGroups ? 'bcg_confirm' : 'bc_confirm'; st.chat = chat; st.mid = msg.message_id;
-    let n = 0;
-    if (toGroups) { for (const g of groups.values()) if (g.active !== false && !g.blocked) n++; }
-    else for (const p of profiles.values()) if (realId(p.id) && !p.blocked) n++;
+    const n = bcTargets(toGroups).length;
     await say(chat, '👆 Хабарлама осылай көрінеді.');
     const pr = await tgApi('copyMessage', { chat_id: chat, from_chat_id: chat, message_id: msg.message_id });
     if (pr && pr.ok && pr.result) track(chat, pr.result.message_id);
@@ -1575,33 +1584,105 @@ async function adminMsg(msg) {
   return false;
 }
 
-// Барлығына хабарлама: copyMessage — мәтін, сурет, сілтеме, форматтау бәрі сол күйінде барады
-async function runBroadcast(adminChat, fromChat, mid, toGroups) {
-  broadcasting = true;
+// Барлығына хабарлама: copyMessage — мәтін, сурет, сілтеме, форматтау бәрі сол күйінде барады.
+// Cloudflare тегін жоспарында бір сұранысқа 50 сыртқы шақыру ғана рұқсат, сондықтан хабарлама бөліктермен
+// жіберіледі: әр бөліктен кейін Durable Object alarm келесі бөлікті өзі іске қосады (батырма басудың қажеті жоқ). Ақылы жоспарда BC_STEP=900 қойсаңыз, бәрі бірден кетеді.
+const BC_STEP = Number(process.env.BC_STEP) || 30;
+let bcJob = null;   // { adminChat, fromChat, mid, toGroups, ids, i, ok, fail, errs }
+
+const bcTargets = toGroups => {
   const ids = [];
-  if (toGroups) { for (const g of groups.values()) if (g.active !== false && !g.blocked) ids.push(g.id); }
-  else for (const p of profiles.values()) if (realId(p.id) && !p.blocked) ids.push(p.id);
-  let ok = 0, fail = 0;
-  await say(adminChat, `📤 Жіберу басталды: ${ids.length} ${toGroups ? 'топ' : 'пайдаланушы'}…`);
+  if (toGroups) { for (const g of groups.values()) if (g.active !== false && !g.blocked) ids.push(String(g.id)); }
+  else for (const p of profiles.values()) if (realId(p.id) && !p.blocked && !p.tgGone) ids.push(String(p.id));
+  return ids;
+};
+
+// tgApi сияқты, бірақ тоқтап қалмайды (10 сек) және қатені лақтырмай қайтарады
+async function bcApi(method, data) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), 10000);
   try {
-    for (const id of ids) {
-      try {
-        let r = await tgApi('copyMessage', { chat_id: id, from_chat_id: fromChat, message_id: mid });
-        if (r && !r.ok && r.error_code === 429) {
-          await sleep(((r.parameters && r.parameters.retry_after) || 3) * 1000 + 200);
-          r = await tgApi('copyMessage', { chat_id: id, from_chat_id: fromChat, message_id: mid });
-        }
-        if (r && r.ok) ok++;
-        else {
-          fail++;
-          if (toGroups && r && /kicked|not found|not a member|deactivated/i.test(r.description || '')) { const gr = groups.get(String(id)); if (gr) { gr.active = false; saveGroup(gr); } }
-        }
-      } catch (e) { fail++; }
-      await sleep(50);   // секундына ~20 хабарлама (Telegram шегінен төмен)
-    }
-  } finally { broadcasting = false; }
-  await showMenu(adminChat, adminChat, null, `✅ Хабарлама жіберілді.\n\n📬 Жеткізілді: <b>${ok}</b>\n⚠️ Жеткізілмеді: <b>${fail}</b> (ботты бұғаттағандар т.б.)`);
+    const r = await fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/' + method, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data), signal: ac.signal
+    });
+    return await r.json();
+  } catch (e) {
+    return { ok: false, description: 'fetch: ' + (e && e.message || e) };
+  } finally { clearTimeout(t); }
 }
+
+async function bcSendOne(id, j) {
+  for (let a = 0; a < 2; a++) {
+    const r = await bcApi('copyMessage', { chat_id: id, from_chat_id: j.fromChat, message_id: j.mid });
+    if (r && r.ok) return { ok: true };
+    if (r && r.error_code === 429 && a === 0) {
+      const w = (r.parameters && r.parameters.retry_after) || 3;
+      if (w > 15) return { ok: false, desc: '429 retry_after ' + w, stop: true };
+      await sleep(w * 1000 + 200);
+      continue;
+    }
+    const desc = (r && r.description) || 'жауап жоқ';
+    return { ok: false, desc, stop: /too many subrequests/i.test(desc) };
+  }
+  return { ok: false, desc: '429' };
+}
+
+async function bcRun(adminChat, panelMid) {
+  const j = bcJob;
+  if (!j) return showMenu(adminChat, adminChat, panelMid, '❗ Жіберілетін хабарлама табылмады.');
+  if (panelMid) j.panel = panelMid;
+  broadcasting = true;
+  let stopped = false;
+  try {
+    const end = Math.min(j.i + BC_STEP, j.ids.length);
+    for (; j.i < end; j.i++) {
+      const id = j.ids[j.i];
+      const r = await bcSendOne(id, j);
+      if (r.stop) { stopped = true; j.errs[r.desc] = (j.errs[r.desc] || 0) + 1; break; }   // осы бөлікте шектеу бітті: қайталап жібереміз
+      if (r.ok) j.ok++;
+      else {
+        j.fail++;
+        const key = String(r.desc || '').slice(0, 80);
+        j.errs[key] = (j.errs[key] || 0) + 1;
+        if (j.toGroups) { if (/kicked|not found|not a member|deactivated/i.test(r.desc || '')) { const gr = groups.get(id); if (gr) { gr.active = false; saveGroup(gr); } } }
+        else if (/blocked by the user|deactivated|chat not found|can't initiate|forbidden/i.test(r.desc || '')) {   // ботты бұғаттаған: келесіде қайта жібермейміз
+          const p = profiles.get(id); if (p) { p.tgGone = true; saveProfile(p); }
+        }
+      }
+      await sleep(40);
+    }
+  } catch (e) {
+    console.error('broadcast:', e && e.message);
+  } finally { broadcasting = false; }
+  dbPut('cfg:bcjob', j.i >= j.ids.length ? null : j);
+  const left = j.ids.length - j.i;
+  const errTxt = Object.entries(j.errs).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `• ${esc(k)} — ${n}`).join('\n');
+  const stat = `📬 Жеткізілді: <b>${j.ok}</b>\n⚠️ Жеткізілмеді: <b>${j.fail}</b>` + (errTxt ? `\n\n<b>Себептері:</b>\n${errTxt}` : '');
+  if (left > 0) {
+    let auto = false;
+    if (CF.setAlarm) { try { await CF.setAlarm(1500); auto = true; } catch (e) { console.error('alarm:', e && e.message); } }
+    const rows = auto ? [] : [[{ text: `▶️ Жалғастыру (қалды: ${left})`, callback_data: 'a:bc_next' }]];
+    rows.push([{ text: '⏹ Тоқтату', callback_data: 'a:bc_stop' }]);
+    const r = await say(adminChat, `📤 <b>Жіберу жүріп жатыр:</b> ${j.i} / ${j.ids.length}\n\n${stat}\n\n` + (auto ? '⏳ Қалғаны автоматты түрде жіберіледі. Ештеңе басудың қажеті жоқ.' : 'Келесі бөлікті жіберу үшін «Жалғастыру» басыңыз.'), { inline_keyboard: rows }, panelMid);
+    if (r && r.ok && r.result && r.result.message_id) j.panel = r.result.message_id;
+    return r;
+  }
+  bcJob = null;
+  return showMenu(adminChat, adminChat, panelMid, `✅ Хабарлама жіберілді.\n\n${stat}`);
+}
+
+// Durable Object alarm шақырады (cf/worker.js): келесі бөлікті автоматты жібереді
+async function bcAlarm() {
+  const j = bcJob;
+  if (!j || broadcasting) return;
+  try { await bcRun(j.adminChat, j.panel); }
+  catch (e) {
+    console.error('bc alarm:', e && e.message);
+    j.retries = (j.retries || 0) + 1;
+    if (bcJob === j && j.retries < 5 && CF.setAlarm) { try { await CF.setAlarm(5000); } catch (e2) { /* соңы */ } }
+  }
+}
+CF.onAlarm = bcAlarm;
 
 /* ================= Топ: /play, /language, нәтижелер ================= */
 
