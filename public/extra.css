@@ -348,8 +348,8 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 }
 
 /* === Ойын экраны: тақта екі профиль қатарының дәл ортасында, екі жақтағы бос жер тең === */
-#game{padding-top:calc(var(--sat) + 52px);padding-bottom:calc(104px + max(12px,var(--sab)))}
-#game .hint{position:absolute;top:calc(var(--sat) + 8px);left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100% - 16px)}
+#game{padding-top:calc(var(--sat) + 40px);padding-bottom:calc(104px + max(12px,var(--sab)))}
+#game .hint{position:absolute;top:calc(var(--sat) - 10px);left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100% - 16px)}
 @supports (aspect-ratio:1 / 1){
   #game{--gap:calc(min(100vw - 16px, 520px) * .0556 + 4px)}   /* тас басының биіктігі + аздап бос жер */
   #game .bar.top{margin-top:auto;margin-bottom:0}
