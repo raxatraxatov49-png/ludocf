@@ -267,7 +267,7 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 
 /* === Бас мәзір: экранды толтыратын, бірақ айналмайтын нұсқа === */
 #menu{overflow:hidden;padding-top:calc(var(--sat) + 10px)}
-#menu,.navscr{padding-bottom:calc(88px + max(10px,env(safe-area-inset-bottom)))}
+#menu,.navscr{padding-bottom:calc(76px + max(10px,env(safe-area-inset-bottom)))}
 #menu .menuwrap{flex:none;gap:12px;justify-content:flex-start}
 #menu .prof{flex:none;padding:10px 12px;border-radius:22px;gap:12px}
 #menu .ringava{width:54px;height:54px;border-width:3px;padding:3px}
@@ -296,10 +296,10 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 #langs.sheet .sbtn.on{background:linear-gradient(180deg,#fbe08f,#e8b04e);color:#2a1c00}
 
 /* === Төменгі навигация: орташа өлшем === */
-.nav{left:20px;right:20px;max-width:390px;padding:5px;border-radius:28px;bottom:max(12px,env(safe-area-inset-bottom))}
-.nav button{padding:8px 2px 6px;font-size:12px;gap:2px;border-radius:23px}
-.nav button svg{width:24px;height:24px}
-.nav .lens{border-radius:23px}
+.nav{left:20px;right:20px;max-width:390px;padding:4px;border-radius:24px;bottom:max(12px,env(safe-area-inset-bottom))}
+.nav button{padding:5px 2px 4px;font-size:11px;gap:1px;border-radius:20px}
+.nav button svg{width:20px;height:20px}
+.nav .lens{border-radius:20px}
 
 /* === Шашка боттағыдай әдемі стиль: күлгін шыны карталар, алтын жарқыл === */
 #menu .prof{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
@@ -356,9 +356,3 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
   #game .boardwrap{margin:var(--gap) 0}
   #game .bar.bottom{margin-bottom:auto}
 }
-
-/* === Төменгі «Мәзір / Чат» панелі: биіктігі аз, ені өзгермейді === */
-.gbar{border-radius:22px;padding:4px}
-.gbar .gb{padding:10px 8px;font-size:15px;gap:8px;border-radius:18px}
-.gbar .gb svg{width:20px;height:20px}
-.gbar .badge{top:3px}
