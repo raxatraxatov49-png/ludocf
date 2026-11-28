@@ -346,3 +346,19 @@ html,body{overflow-x:hidden;max-width:100%;overscroll-behavior:none}
 @supports not (aspect-ratio:1 / 1){
   #game .boardwrap{margin-top:6px}
 }
+
+/* === Ойын экраны: тақта екі профиль қатарының дәл ортасында, екі жақтағы бос жер тең === */
+#game{padding-top:calc(var(--sat) + 52px);padding-bottom:calc(58px + max(12px,var(--sab)))}
+#game .hint{position:absolute;top:calc(var(--sat) + 8px);left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100% - 16px)}
+@supports (aspect-ratio:1 / 1){
+  #game{--gap:calc(min(100vw - 16px, 520px) * .0556 + 4px)}   /* тас басының биіктігі + аздап бос жер */
+  #game .bar.top{margin-top:auto;margin-bottom:0}
+  #game .boardwrap{margin:var(--gap) 0}
+  #game .bar.bottom{margin-bottom:auto}
+}
+
+/* === Төменгі «Мәзір / Чат» панелі: биіктігі аз, ені өзгермейді === */
+.gbar{border-radius:22px;padding:4px}
+.gbar .gb{padding:10px 8px;font-size:15px;gap:8px;border-radius:18px}
+.gbar .gb svg{width:20px;height:20px}
+.gbar .badge{top:3px}
